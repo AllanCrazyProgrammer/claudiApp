@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Package, AlertTriangle, TrendingUp, Download } from 'lucide-react';
 import { dbUtils, type Producto } from '@/lib/database';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 
 interface ProductoConValor extends Producto {
   valorInventario: number;
@@ -245,7 +245,7 @@ export function Reportes() {
                             producto.existenciaActual === 0 ? 'text-red-600' :
                             producto.existenciaActual < 10 ? 'text-yellow-600' : 'text-green-600'
                           }`}>
-                            {producto.existenciaActual}
+                            {formatNumber(producto.existenciaActual, 2)}
                           </span>
                         </td>
                         <td className="py-3 px-4">

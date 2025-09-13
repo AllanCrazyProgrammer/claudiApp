@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Service Worker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiar Service Worker</h1>
+        <p>Este script eliminará completamente el Service Worker y todos los caches para solucionar el problema de la página offline.</p>
+        
+        <button onclick="limpiarTodo()">🗑️ Limpiar Todo</button>
+        <button onclick="verificarEstado()">🔍 Verificar Estado</button>
+        <button onclick="irAApp()">🏠 Ir a la App</button>
+        
+        <div id="resultado"></div>
+        
+        <div class="info">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>Haz clic en "Limpiar Todo"</li>
+                <li>Espera a que aparezca el mensaje de éxito</li>
+                <li>Haz clic en "Ir a la App"</li>
+                <li>La aplicación debería cargar normalmente</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function mostrarResultado(mensaje, tipo = 'info') {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = mensaje;
+            resultado.className = tipo;
+        }
+
+        async function limpiarTodo() {
+            try {
+                mostrarResultado('🔄 Limpiando Service Workers y caches...', 'info');
+                
+                // 1. Desregistrar todos los Service Workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        console.log('Service Worker desregistrado:', registration);
+                    }
+                }
+                
+                // 2. Limpiar todos los caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                    console.log('Caches limpiados:', cacheNames);
+                }
+                
+                // 3. Limpiar localStorage y sessionStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // 4. Limpiar IndexedDB si existe
+                if ('indexedDB' in window) {
+                    try {
+                        const databases = await indexedDB.databases();
+                        for (let db of databases) {
+                            if (db.name) {
+                                indexedDB.deleteDatabase(db.name);
+                            }
+                        }
+                    } catch (e) {
+                        console.log('No se pudo limpiar IndexedDB:', e);
+                    }
+                }
+                
+                mostrarResultado('✅ ¡Limpieza completada! Service Workers y caches eliminados. Ahora puedes ir a la aplicación.', 'success');
+                
+            } catch (error) {
+                console.error('Error al limpiar:', error);
+                mostrarResultado('❌ Error durante la limpieza: ' + error.message, 'error');
+            }
+        }
+
+        async function verificarEstado() {
+            try {
+                let mensaje = '<h3>📊 Estado actual:</h3><ul>';
+                
+                // Verificar Service Workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    mensaje += `<li>Service Workers registrados: ${registrations.length}</li>`;
+                } else {
+                    mensaje += '<li>Service Workers: No soportado</li>';
+                }
+                
+                // Verificar caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    mensaje += `<li>Caches activos: ${cacheNames.length}</li>`;
+                } else {
+                    mensaje += '<li>Caches: No soportado</li>';
+                }
+                
+                mensaje += '</ul>';
+                mostrarResultado(mensaje, 'info');
+                
+            } catch (error) {
+                mostrarResultado('❌ Error al verificar estado: ' + error.message, 'error');
+            }
+        }
+
+        function irAApp() {
+            window.location.href = '/';
+        }
+
+        // Verificar estado al cargar la página
+        window.addEventListener('load', verificarEstado);
+    </script>
+</body>
+</html>

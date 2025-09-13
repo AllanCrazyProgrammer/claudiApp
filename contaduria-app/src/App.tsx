@@ -4,13 +4,17 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Productos } from '@/pages/Productos';
 import { Entradas } from '@/pages/Entradas';
 import { Proveedores } from '@/pages/Proveedores';
+import { Existencias } from '@/pages/Existencias';
 import { Reportes } from '@/pages/Reportes';
 import { Configuracion } from '@/pages/Configuracion';
 import { Salidas } from '@/pages/Salidas';
 import { useAppStore } from '@/stores/useAppStore';
+import { useAuth } from '@/contexts/AuthContext';
+import { Login } from '@/pages/Login';
 
 function App() {
   const { currentPage, darkMode } = useAppStore();
+  const { user, loading } = useAuth();
 
   // Aplicar tema oscuro al cargar
   useEffect(() => {
@@ -20,6 +24,14 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  if (loading) {
+    return <div className="p-6 text-center">Cargando...</div>;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   const renderCurrentPage = () => {
     switch (currentPage) {
@@ -33,6 +45,8 @@ function App() {
         return <Salidas />;
       case 'proveedores':
         return <Proveedores />;
+      case 'existencias':
+        return <Existencias />;
       case 'reportes':
         return <Reportes />;
       case 'configuracion':

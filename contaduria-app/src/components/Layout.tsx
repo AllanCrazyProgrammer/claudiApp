@@ -11,8 +11,10 @@ import {
   BarChart3, 
   Settings,
   Moon,
-  Sun
+  Sun,
+  Warehouse
 } from 'lucide-react';
+import { ConnectionStatus, ConnectionIndicator } from './ConnectionStatus';
 // import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -25,7 +27,8 @@ const menuItems = [
   { id: 'proveedores', label: 'Proveedores', icon: Users },
   { id: 'entradas', label: 'Entradas', icon: TrendingUp },
   { id: 'salidas', label: 'Salidas', icon: TrendingDown },
-  { id: 'reportes', label: 'Existencias', icon: BarChart3 },
+  { id: 'existencias', label: 'Existencias', icon: Warehouse },
+  { id: 'reportes', label: 'Reportes', icon: BarChart3 },
   { id: 'configuracion', label: 'Configuración', icon: Settings },
 ];
 
@@ -111,6 +114,9 @@ export function Layout({ children }: LayoutProps) {
             </div>
             
             <div className="flex items-center space-x-3">
+              {/* Indicador de conexión */}
+              <ConnectionIndicator />
+              
               <button
                 className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                 onClick={toggleDarkMode}
@@ -143,6 +149,9 @@ export function Layout({ children }: LayoutProps) {
           onClick={toggleSidebar}
         />
       )}
+      
+      {/* Componente de estado de conexión */}
+      <ConnectionStatus />
     </div>
   );
 }

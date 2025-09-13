@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, Calendar, Package } from 'lucide-react';
-import { dbUtils, type Entrada, type Producto, type Proveedor } from '@/lib/database';
-import { formatCurrency } from '@/lib/utils';
+import { Plus, TrendingUp, Calendar, Package, Trash2, ChevronDown, ChevronRight, Eye, EyeOff, Edit } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { proveedoresRepo, type ProveedorFS } from '@/lib/repositories/proveedoresRepo';
+import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
+import { entradasRepo, type EntradaFS } from '@/lib/repositories/entradasRepo';
+import { formatCurrency, formatDateShort, createLocalDate, formatNumber } from '@/lib/utils';
+
+interface EntradaPorDiaFS {
+  fecha: string;
+  fechaFormateada: string;
+  entradas: (EntradaFS & { id: string })[];
+  totalEntradas: number;
+  valorTotal: number;
+}
 
 export function Entradas() {
-  const [entradas, setEntradas] = useState<Entrada[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const { user } = useAuth();
+  const [productos, setProductos] = useState<(ProductoFS & { id: string })[]>([]);
+  const [productosDisponibles, setProductosDisponibles] = useState<(ProductoFS & { id: string })[]>([]);
+  const [productosConHistorial, setProductosConHistorial] = useState<(ProductoFS & { id: string })[]>([]);
+  const [proveedores, setProveedores] = useState<(ProveedorFS & { id: string })[]>([]);
+  const [entradasPorDia, setEntradasPorDia] = useState<EntradaPorDiaFS[]>([]);
+  const [diasExpandidos, setDiasExpandidos] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [entradaEditando, setEntradaEditando] = useState<(EntradaFS & { id: string }) | null>(null);
 
   const [formulario, setFormulario] = useState({
     productoId: '',
@@ -27,15 +43,19 @@ export function Entradas() {
 
   const cargarDatos = async () => {
     try {
+      if (!user) return;
       const [entradasData, productosData, proveedoresData] = await Promise.all([
-        dbUtils.obtenerEntradas(),
-        dbUtils.obtenerProductos(),
-        dbUtils.obtenerProveedores()
+        entradasRepo.obtenerEntradas(user.uid),
+        productosRepo.obtenerProductos(user.uid),
+        proveedoresRepo.obtenerProveedores(user.uid)
       ]);
       
-      setEntradas(entradasData);
       setProductos(productosData);
       setProveedores(proveedoresData);
+
+      // Agrupar entradas por día
+      const entradasAgrupadas = agruparEntradasPorDia(entradasData as (EntradaFS & { id: string })[]);
+      setEntradasPorDia(entradasAgrupadas);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     } finally {
@@ -43,42 +63,150 @@ export function Entradas() {
     }
   };
 
+  const agruparEntradasPorDia = (entradas: (EntradaFS & { id: string })[]): EntradaPorDiaFS[] => {
+    const grupos = new Map<string, EntradaPorDiaFS>();
+
+    entradas.forEach(entrada => {
+      // Convertir Timestamp a Date
+      const fechaDate = (entrada.fecha as any).toDate ? (entrada.fecha as any).toDate() : new Date(entrada.fecha as any);
+      const fechaStr = fechaDate.toISOString().split('T')[0];
+      const fechaFormateada = formatDateShort(fechaDate);
+
+      if (!grupos.has(fechaStr)) {
+        grupos.set(fechaStr, {
+          fecha: fechaStr,
+          fechaFormateada,
+          entradas: [],
+          totalEntradas: 0,
+          valorTotal: 0
+        });
+      }
+
+      const grupo = grupos.get(fechaStr)!;
+      grupo.entradas.push(entrada);
+      grupo.totalEntradas += entrada.cantidad;
+      grupo.valorTotal += entrada.total;
+    });
+
+    // Convertir a array y ordenar por fecha (más reciente primero)
+    return Array.from(grupos.values()).sort((a, b) => 
+      new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dbUtils.crearEntrada({
-        productoId: parseInt(formulario.productoId),
-        proveedorId: parseInt(formulario.proveedorId),
-        fecha: new Date(formulario.fecha),
-        cantidad: parseFloat(formulario.cantidad),
-        precio: parseFloat(formulario.precio),
-        numeroFactura: formulario.numeroFactura || undefined
-      });
+      if (entradaEditando) {
+        alert('La edición de entradas aún no está habilitada en Firestore. Elimina y vuelve a crear.');
+      } else {
+        // Crear nueva entrada
+        if (!user) return;
+        await entradasRepo.crearEntrada({
+          productoId: formulario.productoId,
+          proveedorId: formulario.proveedorId,
+          fecha: createLocalDate(formulario.fecha) as any,
+          cantidad: parseFloat(formulario.cantidad),
+          precio: parseFloat(formulario.precio),
+          numeroFactura: formulario.numeroFactura || undefined,
+          ownerUid: user.uid
+        });
+      }
       
-      setFormulario({
-        productoId: '',
-        proveedorId: '',
-        fecha: new Date().toISOString().split('T')[0],
-        cantidad: '',
-        precio: '',
-        numeroFactura: ''
-      });
-      setMostrarFormulario(false);
+      cancelarEdicion();
       cargarDatos();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar entrada:', error);
-      alert('Error al registrar la entrada. Verifica los datos.');
+      alert(error.message || 'Error al registrar la entrada. Verifica los datos.');
     }
   };
 
-  const obtenerNombreProducto = (productoId: number) => {
+  const eliminarEntrada = async (entrada: EntradaFS & { id: string }) => {
+    const confirmacion = window.confirm(
+      `¿Estás seguro de que deseas eliminar esta entrada?\n\n` +
+      `Producto: ${obtenerNombreProducto(entrada.productoId)}\n` +
+      `Cantidad: ${entrada.cantidad}\n` +
+      `Total: ${formatCurrency(entrada.total)}\n\n` +
+      `Esta acción no se puede deshacer.`
+    );
+    
+    if (confirmacion) {
+      try {
+        alert('Eliminar entrada no está implementado aún en Firestore UI. Puedes gestionarlo desde la consola o lo implementamos después con recálculo.');
+        cargarDatos();
+      } catch (error: any) {
+        console.error('Error al eliminar entrada:', error);
+        alert(error.message || 'Error al eliminar la entrada. Inténtalo de nuevo.');
+      }
+    }
+  };
+
+  const toggleDia = (fecha: string) => {
+    setDiasExpandidos(prev => ({
+      ...prev,
+      [fecha]: !prev[fecha]
+    }));
+  };
+
+  const editarEntrada = (entrada: EntradaFS & { id: string }) => {
+    setEntradaEditando(entrada);
+    const fechaDate = (entrada.fecha as any).toDate ? (entrada.fecha as any).toDate() : new Date(entrada.fecha as any);
+    setFormulario({
+      productoId: entrada.productoId,
+      proveedorId: entrada.proveedorId,
+      fecha: fechaDate.toISOString().split('T')[0],
+      cantidad: entrada.cantidad.toString(),
+      precio: entrada.precio.toString(),
+      numeroFactura: entrada.numeroFactura || ''
+    });
+    setMostrarFormulario(true);
+
+    // Cargar productos para el proveedor seleccionado
+    handleProveedorChange(entrada.proveedorId);
+  };
+
+  const cancelarEdicion = () => {
+    setEntradaEditando(null);
+    setFormulario({
+      productoId: '',
+      proveedorId: '',
+      fecha: new Date().toISOString().split('T')[0],
+      cantidad: '',
+      precio: '',
+      numeroFactura: ''
+    });
+    setProductosDisponibles([]);
+    setProductosConHistorial([]);
+    setMostrarFormulario(false);
+  };
+
+  const obtenerNombreProducto = (productoId: string) => {
     const producto = productos.find(p => p.id === productoId);
     return producto?.nombre || 'Producto no encontrado';
   };
 
-  const obtenerNombreProveedor = (proveedorId: number) => {
+  const obtenerNombreProveedor = (proveedorId: string) => {
     const proveedor = proveedores.find(p => p.id === proveedorId);
     return proveedor?.nombre || 'Proveedor no encontrado';
+  };
+
+  const handleProveedorChange = async (proveedorId: string) => {
+    setFormulario({ ...formulario, proveedorId, productoId: '' });
+    
+    if (proveedorId) {
+      try {
+        // En la versión Firestore listamos todos y dejamos la selección libre
+        setProductosConHistorial([]);
+        setProductosDisponibles(productos);
+      } catch (error) {
+        console.error('Error al cargar productos del proveedor:', error);
+        setProductosConHistorial([]);
+        setProductosDisponibles(productos); // Fallback a todos los productos
+      }
+    } else {
+      setProductosDisponibles([]);
+      setProductosConHistorial([]);
+    }
   };
 
   if (loading) {
@@ -120,14 +248,39 @@ export function Entradas() {
       {mostrarFormulario && (
         <Card>
           <CardHeader>
-            <CardTitle>Nueva Entrada de Inventario</CardTitle>
+            <CardTitle>
+              {entradaEditando ? 'Editar Entrada de Inventario' : 'Nueva Entrada de Inventario'}
+            </CardTitle>
             <CardDescription>
-              Registra una compra o entrada de productos al inventario
+              {entradaEditando 
+                ? 'Modifica los datos de la entrada seleccionada' 
+                : 'Registra una compra o entrada de productos al inventario'
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Proveedor *
+                  </label>
+                  <select
+                    required
+                    value={formulario.proveedorId}
+                    onChange={(e) => handleProveedorChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!!entradaEditando}
+                  >
+                    <option value="">Seleccionar proveedor...</option>
+                    {proveedores.map((proveedor) => (
+                      <option key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Producto *
@@ -137,33 +290,41 @@ export function Entradas() {
                     value={formulario.productoId}
                     onChange={(e) => setFormulario({ ...formulario, productoId: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!formulario.proveedorId || !!entradaEditando}
                   >
-                    <option value="">Seleccionar producto...</option>
-                    {productos.map((producto) => (
-                      <option key={producto.id} value={producto.id}>
-                        {producto.nombre} ({producto.unidadMedida})
-                      </option>
-                    ))}
+                    <option value="">
+                      {!formulario.proveedorId 
+                        ? "Primero selecciona un proveedor..." 
+                        : "Seleccionar producto..."
+                      }
+                    </option>
+                    {productosConHistorial.length > 0 && (
+                      <optgroup label="📦 Productos con historial de compras">
+                        {productosConHistorial.map((producto) => (
+                          <option key={`hist-${producto.id}`} value={producto.id}>
+                            {producto.nombre} ({producto.unidadMedida})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {productosDisponibles.filter(p => !productosConHistorial.some(ph => ph.id === p.id)).length > 0 && (
+                      <optgroup label="📋 Otros productos disponibles">
+                        {productosDisponibles
+                          .filter(p => !productosConHistorial.some(ph => ph.id === p.id))
+                          .map((producto) => (
+                            <option key={`other-${producto.id}`} value={producto.id}>
+                              {producto.nombre} ({producto.unidadMedida})
+                            </option>
+                          ))
+                        }
+                      </optgroup>
+                    )}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Proveedor *
-                  </label>
-                  <select
-                    required
-                    value={formulario.proveedorId}
-                    onChange={(e) => setFormulario({ ...formulario, proveedorId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Seleccionar proveedor...</option>
-                    {proveedores.map((proveedor) => (
-                      <option key={proveedor.id} value={proveedor.id}>
-                        {proveedor.nombre}
-                      </option>
-                    ))}
-                  </select>
+                  {formulario.proveedorId && productosConHistorial.length === 0 && productosDisponibles.length > 0 && (
+                    <p className="text-sm text-blue-600 mt-1">
+                      ℹ️ Este proveedor no tiene historial de compras. Selecciona cualquier producto para crear el primer registro.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -235,9 +396,9 @@ export function Entradas() {
 
               <div className="flex gap-2">
                 <Button type="submit">
-                  Registrar Entrada
+                  {entradaEditando ? 'Actualizar Entrada' : 'Registrar Entrada'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setMostrarFormulario(false)}>
+                <Button type="button" variant="outline" onClick={cancelarEdicion}>
                   Cancelar
                 </Button>
               </div>
@@ -246,66 +407,153 @@ export function Entradas() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Historial de Entradas</CardTitle>
-          <CardDescription>
-            Registro de todas las entradas de inventario
-          </CardDescription>
-        </CardHeader>
+      {!mostrarFormulario && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Historial de Entradas por Día</CardTitle>
+            <CardDescription>
+              Entradas agrupadas por fecha - haz clic en un día para ver el detalle
+            </CardDescription>
+          </CardHeader>
         <CardContent>
-          {entradas.length === 0 ? (
+          {entradasPorDia.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <TrendingUp className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p>No hay entradas registradas aún.</p>
               <p className="text-sm mt-2">Haz clic en "Nueva Entrada" para registrar tu primera compra.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Fecha</th>
-                    <th className="text-left py-3 px-4">Producto</th>
-                    <th className="text-left py-3 px-4">Proveedor</th>
-                    <th className="text-left py-3 px-4">Cantidad</th>
-                    <th className="text-left py-3 px-4">Precio Unit.</th>
-                    <th className="text-left py-3 px-4">Total</th>
-                    <th className="text-left py-3 px-4">Factura</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entradas.map((entrada) => (
-                    <tr key={entrada.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          {new Date(entrada.fecha).toLocaleDateString()}
+            <div className="space-y-4">
+              {entradasPorDia.map((dia) => {
+                const isExpanded = diasExpandidos[dia.fecha];
+                
+                return (
+                  <div key={dia.fecha} className="border rounded-lg overflow-hidden">
+                    {/* Header del día */}
+                    <div 
+                      className="cursor-pointer hover:bg-gray-50 transition-colors p-4 border-b bg-gray-50"
+                      onClick={() => toggleDia(dia.fecha)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5 text-gray-500" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-gray-500" />
+                          )}
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-5 w-5 text-blue-600" />
+                            <div>
+                              <h3 className="font-semibold text-gray-800">{dia.fechaFormateada}</h3>
+                              <p className="text-sm text-gray-600">
+                                {dia.entradas.length} entrada{dia.entradas.length !== 1 ? 's' : ''} • 
+                                Total: {formatCurrency(dia.valorTotal)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-gray-400" />
-                          {obtenerNombreProducto(entrada.productoId)}
+                        
+                        <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500">Cantidad Total</div>
+                          <div className="text-lg font-bold text-green-600">{formatNumber(dia.totalEntradas, 2)}</div>
                         </div>
-                      </td>
-                      <td className="py-3 px-4">{obtenerNombreProveedor(entrada.proveedorId)}</td>
-                      <td className="py-3 px-4 font-medium">{entrada.cantidad}</td>
-                      <td className="py-3 px-4">{formatCurrency(entrada.precio)}</td>
-                      <td className="py-3 px-4 font-semibold text-green-600">
-                        {formatCurrency(entrada.total)}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
-                        {entrada.numeroFactura || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleDia(dia.fecha);
+                            }}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <EyeOff className="h-4 w-4 mr-1" />
+                                Ocultar
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4 mr-1" />
+                                Ver Detalle
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detalle de entradas del día */}
+                    {isExpanded && (
+                      <div className="p-4">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Producto</th>
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Proveedor</th>
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Cantidad</th>
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Precio Unit.</th>
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Total</th>
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Factura</th>
+                                <th className="text-left py-2 px-3 text-sm font-medium text-gray-600">Acciones</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dia.entradas.map((entrada) => (
+                                <tr key={entrada.id} className="border-b hover:bg-gray-50">
+                                  <td className="py-2 px-3">
+                                    <div className="flex items-center gap-2">
+                                      <Package className="h-4 w-4 text-gray-400" />
+                                      <span className="text-sm">{obtenerNombreProducto(entrada.productoId)}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-2 px-3 text-sm">{obtenerNombreProveedor(entrada.proveedorId)}</td>
+                                  <td className="py-2 px-3 text-sm font-medium">{formatNumber(entrada.cantidad, 2)}</td>
+                                  <td className="py-2 px-3 text-sm">{formatCurrency(entrada.precio)}</td>
+                                  <td className="py-2 px-3 text-sm font-semibold text-green-600">
+                                    {formatCurrency(entrada.total)}
+                                  </td>
+                                  <td className="py-2 px-3 text-sm text-gray-500">
+                                    {entrada.numeroFactura || '-'}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => editarEntrada(entrada)}
+                                        className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                                        title="Editar entrada"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => eliminarEntrada(entrada)}
+                                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                                        title="Eliminar entrada"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, Edit, Phone, Mail, MapPin, Trash2 } from 'lucide-react';
-import { dbUtils, type Proveedor } from '@/lib/database';
+import { proveedoresRepo, type ProveedorFS } from '@/lib/repositories/proveedoresRepo';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Proveedores() {
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const { user } = useAuth();
+  const [proveedores, setProveedores] = useState<(ProveedorFS & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [proveedorEditando, setProveedorEditando] = useState<Proveedor | null>(null);
+  const [proveedorEditando, setProveedorEditando] = useState<(ProveedorFS & { id: string }) | null>(null);
 
   const [formulario, setFormulario] = useState({
     nombre: ''
@@ -20,7 +22,8 @@ export function Proveedores() {
 
   const cargarProveedores = async () => {
     try {
-      const proveedoresData = await dbUtils.obtenerProveedores();
+      if (!user) return;
+      const proveedoresData = await proveedoresRepo.obtenerProveedores(user.uid);
       setProveedores(proveedoresData);
     } catch (error) {
       console.error('Error al cargar proveedores:', error);
@@ -34,15 +37,11 @@ export function Proveedores() {
     try {
       if (proveedorEditando) {
         // Actualizar proveedor existente
-        await dbUtils.actualizarProveedor(proveedorEditando.id!, {
-          nombre: formulario.nombre
-        });
+        await proveedoresRepo.actualizarProveedor(proveedorEditando.id!, { nombre: formulario.nombre });
       } else {
         // Crear nuevo proveedor
-        await dbUtils.crearProveedor({
-          nombre: formulario.nombre,
-          activo: true
-        });
+        if (!user) return;
+        await proveedoresRepo.crearProveedor({ nombre: formulario.nombre, activo: true, ownerUid: user.uid });
       }
       
       setFormulario({ nombre: '' });
@@ -54,7 +53,7 @@ export function Proveedores() {
     }
   };
 
-  const editarProveedor = (proveedor: Proveedor) => {
+  const editarProveedor = (proveedor: ProveedorFS & { id: string }) => {
     setProveedorEditando(proveedor);
     setFormulario({
       nombre: proveedor.nombre
@@ -68,10 +67,10 @@ export function Proveedores() {
     setProveedorEditando(null);
   };
 
-  const eliminarProveedor = async (proveedor: Proveedor) => {
+  const eliminarProveedor = async (proveedor: ProveedorFS & { id: string }) => {
     if (window.confirm(`¿Estás seguro de que deseas eliminar el proveedor "${proveedor.nombre}"?`)) {
       try {
-        await dbUtils.eliminarProveedor(proveedor.id!);
+        await proveedoresRepo.eliminarProveedor(proveedor.id!);
         cargarProveedores();
       } catch (error) {
         console.error('Error al eliminar proveedor:', error);

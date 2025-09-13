@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface TipoProducto {
+  id: string;
+  nombre: string;
+  codigo: string;
+}
+
 interface AppState {
   // UI State
   sidebarOpen: boolean;
@@ -18,6 +24,9 @@ interface AppState {
     email: string;
   };
 
+  // Tipos de Productos
+  tiposProductos: TipoProducto[];
+
   // Actions
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -25,6 +34,11 @@ interface AppState {
   toggleDarkMode: () => void;
   setCurrentPage: (page: string) => void;
   updateConfiguracion: (config: Partial<AppState['configuracion']>) => void;
+  
+  // Tipos de Productos Actions
+  agregarTipoProducto: (nombre: string) => void;
+  eliminarTipoProducto: (id: string) => void;
+  actualizarTipoProducto: (id: string, nombre: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -41,6 +55,10 @@ export const useAppStore = create<AppState>()(
         telefono: '',
         email: ''
       },
+      tiposProductos: [
+        { id: '1', nombre: 'S/C (Sin Cabeza)', codigo: 'sc' },
+        { id: '2', nombre: 'C/C (Con Cabeza)', codigo: 'cc' }
+      ],
 
       // Actions
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -68,13 +86,54 @@ export const useAppStore = create<AppState>()(
       
       updateConfiguracion: (config) => set((state) => ({
         configuracion: { ...state.configuracion, ...config }
-      }))
+      })),
+
+      // Tipos de Productos Actions
+      agregarTipoProducto: (nombre) => set((state) => {
+        // Generar código automáticamente basado en el nombre
+        const codigo = nombre
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, '') // Remover caracteres especiales
+          .replace(/\s+/g, '_') // Reemplazar espacios con guiones bajos
+          .substring(0, 10); // Limitar a 10 caracteres
+        
+        return {
+          tiposProductos: [
+            ...state.tiposProductos,
+            {
+              id: Date.now().toString(),
+              nombre,
+              codigo
+            }
+          ]
+        };
+      }),
+
+      eliminarTipoProducto: (id) => set((state) => ({
+        tiposProductos: state.tiposProductos.filter(tipo => tipo.id !== id)
+      })),
+
+      actualizarTipoProducto: (id, nombre) => set((state) => {
+        // Generar nuevo código basado en el nombre actualizado
+        const codigo = nombre
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, '') // Remover caracteres especiales
+          .replace(/\s+/g, '_') // Reemplazar espacios con guiones bajos
+          .substring(0, 10); // Limitar a 10 caracteres
+        
+        return {
+          tiposProductos: state.tiposProductos.map(tipo =>
+            tipo.id === id ? { ...tipo, nombre, codigo } : tipo
+          )
+        };
+      })
     }),
     {
       name: 'contaduria-app-storage',
       partialize: (state) => ({
         darkMode: state.darkMode,
-        configuracion: state.configuracion
+        configuracion: state.configuracion,
+        tiposProductos: state.tiposProductos
       })
     }
   )
