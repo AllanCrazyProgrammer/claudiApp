@@ -25,7 +25,7 @@ export function Productos() {
 
   const [formulario, setFormulario] = useState({
     nombre: '',
-    tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '',
+    tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].nombre : '',
     proveedorId: ''
   });
 
@@ -109,7 +109,7 @@ export function Productos() {
       
       setFormulario({ 
         nombre: '', 
-        tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '',
+        tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].nombre : '',
         proveedorId: ''
       });
       setMostrarFormulario(false);
@@ -127,7 +127,7 @@ export function Productos() {
     setProductoEditando(producto);
     setFormulario({
       nombre: producto.nombre,
-      tipoCorte: producto.tipoCorte || (tiposProductos.length > 0 ? tiposProductos[0].codigo : ''),
+      tipoCorte: producto.tipoCorte || (tiposProductos.length > 0 ? tiposProductos[0].nombre : ''),
       proveedorId: producto.proveedorId || ''
     });
     setMostrarFormulario(true);
@@ -136,7 +136,7 @@ export function Productos() {
   const cancelarEdicion = () => {
     setFormulario({ 
       nombre: '', 
-      tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '',
+      tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].nombre : '',
       proveedorId: ''
     });
     setMostrarFormulario(false);
@@ -259,7 +259,7 @@ export function Productos() {
                       <option value="">No hay tipos configurados</option>
                     ) : (
                       tiposProductos.map((tipo) => (
-                        <option key={tipo.id} value={tipo.codigo}>
+                        <option key={tipo.id} value={tipo.nombre}>
                           {tipo.nombre}
                         </option>
                       ))
@@ -356,7 +356,7 @@ export function Productos() {
                         </td>
                         <td className="py-3 px-4">
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                            {tiposProductos.find(tipo => tipo.codigo === producto.tipoCorte)?.nombre || producto.tipoCorte}
+                            {producto.tipoCorte}
                           </span>
                         </td>
                         <td className="py-3 px-4">

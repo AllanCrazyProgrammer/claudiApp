@@ -50,7 +50,7 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
     setEditando(null);
   };
 
-  const iniciarEdicion = (tipo: { id: string; nombre: string; codigo: string }) => {
+  const iniciarEdicion = (tipo: { id: string; nombre: string }) => {
     setFormulario({ nombre: tipo.nombre });
     setEditando(tipo.id);
     setMostrarFormulario(true);
@@ -117,11 +117,8 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
                         value={formulario.nombre}
                         onChange={(e) => setFormulario({ ...formulario, nombre: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ej: Con Cabeza, Sin Cabeza, Entero, etc."
+                        placeholder="Ej: Con Cabeza, Sin Cabeza, Entero, Freezeado"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        El código se generará automáticamente basado en el nombre
-                      </p>
                     </div>
 
                     <div className="flex gap-2">

@@ -21,7 +21,7 @@ export function FraseDelDia({
   const [categoriaActual, setCategoriaActual] = useState<CategoriaFrase | null>(null);
   const [mostrarSelector, setMostrarSelector] = useState(false);
   const [categorias] = useState(() => frasesService.obtenerCategorias());
-  const [mostrarNotificacionAPI, setMostrarNotificacionAPI] = useState(false);
+  const [mostrarNotificacionAPI] = useState(false);
 
   const cargarFrase = async () => {
     try {

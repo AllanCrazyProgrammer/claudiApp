@@ -4,7 +4,6 @@ import { persist } from 'zustand/middleware';
 export interface TipoProducto {
   id: string;
   nombre: string;
-  codigo: string;
 }
 
 interface AppState {
@@ -55,10 +54,7 @@ export const useAppStore = create<AppState>()(
         telefono: '',
         email: ''
       },
-      tiposProductos: [
-        { id: '1', nombre: 'Camaron s/c Granja', codigo: 'sc' },
-        { id: '2', nombre: 'C/C (Con Cabeza)', codigo: 'cc' }
-      ],
+      tiposProductos: [],
 
       // Actions
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -89,44 +85,25 @@ export const useAppStore = create<AppState>()(
       })),
 
       // Tipos de Productos Actions
-      agregarTipoProducto: (nombre) => set((state) => {
-        // Generar código automáticamente basado en el nombre
-        const codigo = nombre
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, '') // Remover caracteres especiales
-          .replace(/\s+/g, '_') // Reemplazar espacios con guiones bajos
-          .substring(0, 10); // Limitar a 10 caracteres
-        
-        return {
-          tiposProductos: [
-            ...state.tiposProductos,
-            {
-              id: Date.now().toString(),
-              nombre,
-              codigo
-            }
-          ]
-        };
-      }),
+      agregarTipoProducto: (nombre) => set((state) => ({
+        tiposProductos: [
+          ...state.tiposProductos,
+          {
+            id: Date.now().toString(),
+            nombre
+          }
+        ]
+      })),
 
       eliminarTipoProducto: (id) => set((state) => ({
         tiposProductos: state.tiposProductos.filter(tipo => tipo.id !== id)
       })),
 
-      actualizarTipoProducto: (id, nombre) => set((state) => {
-        // Generar nuevo código basado en el nombre actualizado
-        const codigo = nombre
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, '') // Remover caracteres especiales
-          .replace(/\s+/g, '_') // Reemplazar espacios con guiones bajos
-          .substring(0, 10); // Limitar a 10 caracteres
-        
-        return {
-          tiposProductos: state.tiposProductos.map(tipo =>
-            tipo.id === id ? { ...tipo, nombre, codigo } : tipo
-          )
-        };
-      })
+      actualizarTipoProducto: (id, nombre) => set((state) => ({
+        tiposProductos: state.tiposProductos.map(tipo =>
+          tipo.id === id ? { ...tipo, nombre } : tipo
+        )
+      }))
     }),
     {
       name: 'contaduria-app-storage',
