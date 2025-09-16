@@ -4,28 +4,15 @@ import {
   Users, 
   TrendingUp, 
   TrendingDown, 
-  AlertTriangle, 
   Clock, 
-  ShoppingCart,
-  DollarSign,
-  Activity,
   Calendar,
-  Truck,
-  BarChart3,
   Star,
   Sparkles,
   Heart,
-  Zap,
-  Target,
-  Award,
   Compass,
   Rocket,
-  Shield,
-  Database,
-  FileText,
   Settings,
   Eye,
-  PieChart,
   ArrowRight,
   Play
 } from 'lucide-react';
@@ -103,7 +90,7 @@ export function Dashboard() {
     {
       id: 'entradas',
       titulo: 'Entradas de Inventario',
-      descripción: 'Registra cada compra y entrada de mercancía con precisión total',
+      descripcion: 'Registra cada compra y entrada de mercancía con precisión total',
       icono: TrendingUp,
       color: 'text-green-600',
       gradiente: 'from-green-500 to-emerald-500',
@@ -395,7 +382,7 @@ export function Dashboard() {
       </div>
 
       {/* CSS personalizado para animaciones */}
-      <style jsx>{`
+      <style>{`
         @keyframes fade-in-up {
           from {
             opacity: 0;
