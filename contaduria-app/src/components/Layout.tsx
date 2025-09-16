@@ -75,15 +75,6 @@ const menuItems = [
     bgHover: 'hover:bg-purple-50',
     iconBg: 'bg-purple-100 group-hover:bg-purple-200'
   },
-  { 
-    id: 'configuracion', 
-    label: 'Configuración', 
-    icon: Settings,
-    color: 'text-gray-600',
-    gradient: 'from-gray-500 to-slate-500',
-    bgHover: 'hover:bg-gray-50',
-    iconBg: 'bg-gray-100 group-hover:bg-gray-200'
-  },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -94,7 +85,6 @@ export function Layout({ children }: LayoutProps) {
     toggleDarkMode, 
     currentPage, 
     setCurrentPage,
-    configuracion 
   } = useAppStore();
 
   return (
@@ -111,7 +101,7 @@ export function Layout({ children }: LayoutProps) {
                   className: "h-4 w-4 text-white"
                 })}
               </div>
-              <h1 className="text-xl font-bold truncate">{configuracion.nombreEmpresa}</h1>
+              <h1 className="text-xl font-bold truncate">ClaudiApp</h1>
             </div>
             <button
               className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors lg:hidden backdrop-blur-sm"
@@ -224,7 +214,7 @@ export function Layout({ children }: LayoutProps) {
               
               {/* Avatar/Profile placeholder */}
               <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${menuItems.find(item => item.id === currentPage)?.gradient || 'from-blue-500 to-yellow-400'} flex items-center justify-center text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-shadow duration-300`}>
-                {configuracion.nombreEmpresa.charAt(0).toUpperCase()}
+                C
               </div>
             </div>
           </div>

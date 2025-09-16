@@ -14,15 +14,6 @@ interface AppState {
   // Navigation
   currentPage: string;
   
-  // Configuración
-  configuracion: {
-    nombreEmpresa: string;
-    rfc: string;
-    direccion: string;
-    telefono: string;
-    email: string;
-  };
-
   // Tipos de Productos
   tiposProductos: TipoProducto[];
 
@@ -32,7 +23,6 @@ interface AppState {
   setDarkMode: (dark: boolean) => void;
   toggleDarkMode: () => void;
   setCurrentPage: (page: string) => void;
-  updateConfiguracion: (config: Partial<AppState['configuracion']>) => void;
   
   // Tipos de Productos Actions
   agregarTipoProducto: (nombre: string) => void;
@@ -47,13 +37,6 @@ export const useAppStore = create<AppState>()(
       sidebarOpen: true,
       darkMode: false,
       currentPage: 'dashboard',
-      configuracion: {
-        nombreEmpresa: 'ClaudiApp',
-        rfc: '',
-        direccion: '',
-        telefono: '',
-        email: ''
-      },
       tiposProductos: [],
 
       // Actions
@@ -80,10 +63,6 @@ export const useAppStore = create<AppState>()(
       
       setCurrentPage: (page) => set({ currentPage: page }),
       
-      updateConfiguracion: (config) => set((state) => ({
-        configuracion: { ...state.configuracion, ...config }
-      })),
-
       // Tipos de Productos Actions
       agregarTipoProducto: (nombre) => set((state) => ({
         tiposProductos: [
@@ -109,20 +88,10 @@ export const useAppStore = create<AppState>()(
       name: 'contaduria-app-storage',
       version: 1,
       migrate: (persistedState: any) => {
-        if (persistedState?.configuracion?.nombreEmpresa === 'Mi Empresa') {
-          return {
-            ...persistedState,
-            configuracion: {
-              ...persistedState.configuracion,
-              nombreEmpresa: 'ClaudiApp'
-            }
-          };
-        }
         return persistedState;
       },
       partialize: (state) => ({
         darkMode: state.darkMode,
-        configuracion: state.configuracion,
         tiposProductos: state.tiposProductos
       })
     }

@@ -5,7 +5,6 @@ import { Productos } from '@/pages/Productos';
 import { Entradas } from '@/pages/Entradas';
 import { Proveedores } from '@/pages/Proveedores';
 import { Existencias } from '@/pages/Existencias';
-import { Configuracion } from '@/pages/Configuracion';
 import { Salidas } from '@/pages/Salidas';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,8 +45,6 @@ function App() {
         return <Proveedores />;
       case 'existencias':
         return <Existencias />;
-      case 'configuracion':
-        return <Configuracion />;
       default:
         return <Dashboard />;
     }
