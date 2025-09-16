@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function Productos() {
   const { user } = useAuth();
-  const { tiposProductos, setCurrentPage } = useAppStore();
+  const { tiposProductos, setCurrentPage, cargarTiposProductos } = useAppStore();
   const [productos, setProductos] = useState<(ProductoFS & { id: string })[]>([]);
   const [proveedores, setProveedores] = useState<Array<{ id: string; nombre: string }>>([]);
   const [lotes, setLotes] = useState<Record<string, (LoteFS & { id: string })[]>>({});
@@ -25,13 +25,37 @@ export function Productos() {
 
   const [formulario, setFormulario] = useState({
     nombre: '',
-    tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].nombre : '',
+    tipoCorte: '',
     proveedorId: ''
   });
 
+  // Efecto para actualizar el formulario cuando cambien los tipos de productos
   useEffect(() => {
-    cargarProductos();
-  }, []);
+    if (tiposProductos.length > 0 && !formulario.tipoCorte && !productoEditando) {
+      setFormulario(prev => ({
+        ...prev,
+        tipoCorte: tiposProductos[0].nombre
+      }));
+    }
+  }, [tiposProductos, formulario.tipoCorte, productoEditando]);
+
+  useEffect(() => {
+    const inicializar = async () => {
+      if (!user) return;
+      
+      try {
+        // Cargar tipos de productos y productos en paralelo
+        await Promise.all([
+          cargarTiposProductos(user.uid),
+          cargarProductos()
+        ]);
+      } catch (error) {
+        console.error('Error al inicializar datos:', error);
+      }
+    };
+
+    inicializar();
+  }, [user]);
 
   const cargarProductos = async () => {
     try {

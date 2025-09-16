@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { tiposProductosRepo } from '@/lib/repositories/tiposProductosRepo';
 
 export interface TipoProducto {
   id: string;
@@ -25,9 +26,10 @@ interface AppState {
   setCurrentPage: (page: string) => void;
   
   // Tipos de Productos Actions
-  agregarTipoProducto: (nombre: string) => void;
-  eliminarTipoProducto: (id: string) => void;
-  actualizarTipoProducto: (id: string, nombre: string) => void;
+  cargarTiposProductos: (ownerUid: string) => Promise<void>;
+  agregarTipoProducto: (nombre: string, ownerUid: string) => Promise<void>;
+  eliminarTipoProducto: (id: string) => Promise<void>;
+  actualizarTipoProducto: (id: string, nombre: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>()(
@@ -64,25 +66,65 @@ export const useAppStore = create<AppState>()(
       setCurrentPage: (page) => set({ currentPage: page }),
       
       // Tipos de Productos Actions
-      agregarTipoProducto: (nombre) => set((state) => ({
-        tiposProductos: [
-          ...state.tiposProductos,
-          {
-            id: Date.now().toString(),
-            nombre
-          }
-        ]
-      })),
+      cargarTiposProductos: async (ownerUid: string) => {
+        try {
+          const tiposData = await tiposProductosRepo.obtenerTiposProductos(ownerUid);
+          const tipos = tiposData.map(tipo => ({
+            id: tipo.id!,
+            nombre: tipo.nombre
+          }));
+          set({ tiposProductos: tipos });
+        } catch (error) {
+          console.error('Error al cargar tipos de productos:', error);
+          throw error;
+        }
+      },
 
-      eliminarTipoProducto: (id) => set((state) => ({
-        tiposProductos: state.tiposProductos.filter(tipo => tipo.id !== id)
-      })),
+      agregarTipoProducto: async (nombre: string, ownerUid: string) => {
+        try {
+          const id = await tiposProductosRepo.crearTipoProducto({
+            nombre,
+            activo: true,
+            ownerUid
+          });
+          
+          set((state) => ({
+            tiposProductos: [
+              ...state.tiposProductos,
+              { id, nombre }
+            ]
+          }));
+        } catch (error) {
+          console.error('Error al agregar tipo de producto:', error);
+          throw error;
+        }
+      },
 
-      actualizarTipoProducto: (id, nombre) => set((state) => ({
-        tiposProductos: state.tiposProductos.map(tipo =>
-          tipo.id === id ? { ...tipo, nombre } : tipo
-        )
-      }))
+      eliminarTipoProducto: async (id: string) => {
+        try {
+          await tiposProductosRepo.eliminarTipoProducto(id);
+          set((state) => ({
+            tiposProductos: state.tiposProductos.filter(tipo => tipo.id !== id)
+          }));
+        } catch (error) {
+          console.error('Error al eliminar tipo de producto:', error);
+          throw error;
+        }
+      },
+
+      actualizarTipoProducto: async (id: string, nombre: string) => {
+        try {
+          await tiposProductosRepo.actualizarTipoProducto(id, { nombre });
+          set((state) => ({
+            tiposProductos: state.tiposProductos.map(tipo =>
+              tipo.id === id ? { ...tipo, nombre } : tipo
+            )
+          }));
+        } catch (error) {
+          console.error('Error al actualizar tipo de producto:', error);
+          throw error;
+        }
+      }
     }),
     {
       name: 'contaduria-app-storage',
@@ -91,8 +133,8 @@ export const useAppStore = create<AppState>()(
         return persistedState;
       },
       partialize: (state) => ({
-        darkMode: state.darkMode,
-        tiposProductos: state.tiposProductos
+        darkMode: state.darkMode
+        // Removemos tiposProductos del persist ya que ahora se cargan desde la DB
       })
     }
   )

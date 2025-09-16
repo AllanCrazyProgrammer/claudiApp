@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, X, Settings } from 'lucide-react';
 import { useAppStore } from '@/stores/useAppStore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TiposProductosModalProps {
   isOpen: boolean;
@@ -10,18 +11,25 @@ interface TiposProductosModalProps {
 }
 
 export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProps) {
+  const { user } = useAuth();
   const { tiposProductos, agregarTipoProducto, eliminarTipoProducto, actualizarTipoProducto } = useAppStore();
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [formulario, setFormulario] = useState({
     nombre: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formulario.nombre.trim()) {
       alert('Por favor, ingresa el nombre del tipo');
+      return;
+    }
+
+    if (!user) {
+      alert('Usuario no autenticado');
       return;
     }
 
@@ -35,13 +43,23 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
       return;
     }
 
-    if (editando) {
-      actualizarTipoProducto(editando, formulario.nombre);
-    } else {
-      agregarTipoProducto(formulario.nombre);
-    }
+    setLoading(true);
+    try {
+      if (editando) {
+        await actualizarTipoProducto(editando, formulario.nombre);
+        alert('Tipo de producto actualizado exitosamente');
+      } else {
+        await agregarTipoProducto(formulario.nombre, user.uid);
+        alert('Tipo de producto creado exitosamente');
+      }
 
-    resetFormulario();
+      resetFormulario();
+    } catch (error) {
+      console.error('Error al guardar tipo de producto:', error);
+      alert('Error al guardar el tipo de producto. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetFormulario = () => {
@@ -56,9 +74,18 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
     setMostrarFormulario(true);
   };
 
-  const confirmarEliminacion = (id: string, nombre: string) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar el tipo "${nombre}"?`)) {
-      eliminarTipoProducto(id);
+  const confirmarEliminacion = async (id: string, nombre: string) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el tipo "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+      setLoading(true);
+      try {
+        await eliminarTipoProducto(id);
+        alert('Tipo de producto eliminado exitosamente');
+      } catch (error) {
+        console.error('Error al eliminar tipo de producto:', error);
+        alert('Error al eliminar el tipo de producto. Inténtalo de nuevo.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -122,10 +149,10 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
                     </div>
 
                     <div className="flex gap-2">
-                      <Button type="submit">
-                        {editando ? 'Actualizar' : 'Agregar'} Tipo
+                      <Button type="submit" disabled={loading}>
+                        {loading ? 'Guardando...' : (editando ? 'Actualizar' : 'Agregar')} Tipo
                       </Button>
-                      <Button type="button" variant="outline" onClick={resetFormulario}>
+                      <Button type="button" variant="outline" onClick={resetFormulario} disabled={loading}>
                         Cancelar
                       </Button>
                     </div>
@@ -157,6 +184,7 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
                         variant="outline"
                         onClick={() => iniciarEdicion(tipo)}
                         title="Editar tipo"
+                        disabled={loading}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -166,6 +194,7 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
                         onClick={() => confirmarEliminacion(tipo.id, tipo.nombre)}
                         className="text-red-600 hover:text-red-700 hover:border-red-300"
                         title="Eliminar tipo"
+                        disabled={loading}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
