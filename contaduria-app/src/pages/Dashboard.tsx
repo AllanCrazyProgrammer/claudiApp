@@ -1,312 +1,426 @@
 import { useEffect, useState } from 'react';
-import { dbUtils } from '@/lib/database';
-import { formatCurrency } from '@/lib/utils';
-import { Package, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import { 
+  Package, 
+  Users, 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  Clock, 
+  ShoppingCart,
+  DollarSign,
+  Activity,
+  Calendar,
+  Truck,
+  BarChart3,
+  Star,
+  Sparkles,
+  Heart,
+  Zap,
+  Target,
+  Award,
+  Compass,
+  Rocket,
+  Shield,
+  Database,
+  FileText,
+  Settings,
+  Eye,
+  PieChart,
+  ArrowRight,
+  Play
+} from 'lucide-react';
 
-interface ResumenDashboard {
-  totalProductos: number;
-  totalProveedores: number;
-  valorInventario: number;
-  productosConBajoStock: number;
-  entradasMes: number;
-  salidasMes: number;
-  diferenciaMes: number;
+interface Seccion {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  icono: any;
+  color: string;
+  gradiente: string;
+  caracteristicas: string[];
+  ruta: string;
 }
 
 export function Dashboard() {
-  const [resumen, setResumen] = useState<ResumenDashboard>({
-    totalProductos: 0,
-    totalProveedores: 0,
-    valorInventario: 0,
-    productosConBajoStock: 0,
-    entradasMes: 0,
-    salidasMes: 0,
-    diferenciaMes: 0
-  });
-  const [loading, setLoading] = useState(true);
+  const [scrollY, setScrollY] = useState(0);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const cargarResumen = async () => {
-      try {
-        const fechaActual = new Date();
-        const fechaInicio = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
-        const fechaFin = new Date(fechaActual.getFullYear(), fechaActual.getMonth() + 1, 0);
+    // Efecto parallax
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
 
-        // Obtener datos generales
-        const productos = await dbUtils.obtenerProductos();
-        const proveedores = await dbUtils.obtenerProveedores();
-        const reporteExistencias = await dbUtils.obtenerReporteExistencias();
-
-        // Obtener movimientos del mes actual
-        const movimientosMes = await dbUtils.obtenerMovimientosPorPeriodo(fechaInicio, fechaFin);
-
-        // Calcular productos con bajo stock (menos de 10 unidades)
-        const productosConBajoStock = productos.filter(p => p.existenciaActual < 10).length;
-
-        // Calcular valor total del inventario
-        const valorInventario = reporteExistencias.reduce((sum, p) => sum + p.valorInventario, 0);
-
-        setResumen({
-          totalProductos: productos.length,
-          totalProveedores: proveedores.length,
-          valorInventario,
-          productosConBajoStock,
-          entradasMes: movimientosMes.valorEntradas,
-          salidasMes: movimientosMes.valorSalidas,
-          diferenciaMes: movimientosMes.diferencia
-        });
-      } catch (error) {
-        console.error('Error al cargar resumen:', error);
-      } finally {
-        setLoading(false);
-      }
+    // Efecto de seguimiento del mouse
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
     };
+    window.addEventListener('mousemove', handleMouseMove);
 
-    cargarResumen();
+    // Actualizar hora cada segundo
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mousemove', handleMouseMove);
+      clearInterval(timer);
+    };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-8 p-6">
-        {/* Header skeleton */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-200 to-gray-300 p-8 shadow-2xl animate-pulse">
-          <div className="h-8 bg-gray-400/50 rounded-lg w-48 mb-2"></div>
-          <div className="h-6 bg-gray-400/30 rounded-lg w-64"></div>
-        </div>
-        
-        {/* Cards skeleton */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="relative overflow-hidden rounded-2xl bg-white shadow-lg border border-gray-100 p-6 animate-pulse">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-xl bg-gray-200 w-12 h-12"></div>
-                <div className="h-8 bg-gray-200 rounded-lg w-16"></div>
-              </div>
-              <div className="h-6 bg-gray-200 rounded-lg w-32 mb-2"></div>
-              <div className="h-4 bg-gray-100 rounded-lg w-24"></div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Financial cards skeleton */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg border border-gray-100 animate-pulse">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-gray-200 rounded-lg mr-3 w-9 h-9"></div>
-                <div>
-                  <div className="h-5 bg-gray-200 rounded w-32 mb-1"></div>
-                  <div className="h-4 bg-gray-100 rounded w-40"></div>
-                </div>
-              </div>
-              <div className="h-8 bg-gray-200 rounded-lg w-24"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const tarjetas = [
+  const secciones: Seccion[] = [
     {
-      titulo: 'Total Productos',
-      valor: resumen.totalProductos.toString(),
-      descripcion: 'Productos registrados',
+      id: 'productos',
+      titulo: 'Catálogo de Productos',
+      descripcion: 'El corazón de tu inventario donde registras y gestionas todos tus productos',
       icono: Package,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
+      gradiente: 'from-blue-500 to-cyan-500',
+      caracteristicas: [
+        'Registro completo de productos con descripción y precios',
+        'Clasificación por tipos y categorías personalizables',
+        'Control de unidades de medida (piezas, kg, litros, etc.)',
+        'Asignación de proveedores principales',
+        'Seguimiento automático de existencias actuales'
+      ],
+      ruta: '/productos'
     },
     {
-      titulo: 'Total Proveedores',
-      valor: resumen.totalProveedores.toString(),
-      descripcion: 'Proveedores activos',
+      id: 'proveedores',
+      titulo: 'Red de Proveedores',
+      descripcion: 'Gestiona tu cadena de suministro y mantén contacto con tus aliados comerciales',
       icono: Users,
-      color: 'text-green-600'
+      color: 'text-emerald-600',
+      gradiente: 'from-emerald-500 to-teal-500',
+      caracteristicas: [
+        'Base de datos completa de contactos comerciales',
+        'Información de contacto: teléfono, email y datos adicionales',
+        'Historial de compras y productos suministrados',
+        'Evaluación de rendimiento por proveedor',
+        'Gestión de relaciones comerciales estratégicas'
+      ],
+      ruta: '/proveedores'
     },
     {
-      titulo: 'Valor del Inventario',
-      valor: formatCurrency(resumen.valorInventario),
-      descripcion: 'Valor total en existencias',
+      id: 'entradas',
+      titulo: 'Entradas de Inventario',
+      descripción: 'Registra cada compra y entrada de mercancía con precisión total',
       icono: TrendingUp,
-      color: 'text-amber-600'
+      color: 'text-green-600',
+      gradiente: 'from-green-500 to-emerald-500',
+      caracteristicas: [
+        'Registro detallado de compras con fechas y facturas',
+        'Control de precios y cálculo automático de totales',
+        'Sistema de lotes FIFO (Primero en Entrar, Primero en Salir)',
+        'Actualización automática de precios promedio',
+        'Trazabilidad completa de cada entrada'
+      ],
+      ruta: '/entradas'
     },
     {
-      titulo: 'Productos con Bajo Stock',
-      valor: resumen.productosConBajoStock.toString(),
-      descripcion: 'Menos de 10 unidades',
+      id: 'salidas',
+      titulo: 'Salidas y Ventas',
+      descripcion: 'Controla cada venta, salida y movimiento de tu inventario',
       icono: TrendingDown,
-      color: resumen.productosConBajoStock > 0 ? 'text-red-600' : 'text-green-600'
+      color: 'text-orange-600',
+      gradiente: 'from-orange-500 to-red-500',
+      caracteristicas: [
+        'Registro de ventas con múltiples motivos (venta, merma, donación)',
+        'Control automático de stock disponible',
+        'Cálculo de ganancias y márgenes por producto',
+        'Sistema inteligente de rotación de lotes',
+        'Reportes de movimientos por período'
+      ],
+      ruta: '/salidas'
+    },
+    {
+      id: 'existencias',
+      titulo: 'Control de Existencias',
+      descripcion: 'Visualiza en tiempo real el estado completo de tu inventario',
+      icono: Eye,
+      color: 'text-purple-600',
+      gradiente: 'from-purple-500 to-pink-500',
+      caracteristicas: [
+        'Vista en tiempo real de todas las existencias',
+        'Alertas automáticas de stock bajo o crítico',
+        'Valorización actual del inventario completo',
+        'Identificación de productos sin movimiento',
+        'Reportes detallados exportables a PDF'
+      ],
+      ruta: '/existencias'
+    },
+    {
+      id: 'configuracion',
+      titulo: 'Centro de Configuración',
+      descripcion: 'Personaliza la aplicación según las necesidades específicas de tu negocio',
+      icono: Settings,
+      color: 'text-gray-600',
+      gradiente: 'from-gray-500 to-slate-500',
+      caracteristicas: [
+        'Configuración de tipos de productos personalizados',
+        'Ajustes de alertas y notificaciones',
+        'Personalización de formatos de reportes',
+        'Configuración de monedas y unidades',
+        'Respaldo y restauración de datos'
+      ],
+      ruta: '/configuracion'
     }
   ];
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header con gradiente */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-blue-500 to-amber-400 p-8 text-white shadow-2xl animate-fade-in-scale">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10">
-          <h1 className="text-4xl font-bold tracking-tight mb-2">Dashboard de Inventario</h1>
-          <p className="text-blue-100 text-lg">
-            Control y seguimiento de tu inventario
-          </p>
-        </div>
-        <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-white/10 blur-xl animate-pulse"></div>
-        <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/5 blur-2xl animate-pulse"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Elementos de fondo con parallax */}
+      <div 
+        className="absolute inset-0 opacity-30"
+        style={{
+          transform: `translateY(${scrollY * 0.5}px)`,
+        }}
+      >
+        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '4s' }}></div>
       </div>
 
-      {/* Tarjetas de resumen con gradientes */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {tarjetas.map((tarjeta, index) => {
-          const Icono = tarjeta.icono;
-          const gradients = [
-            'from-blue-500 to-blue-600',
-            'from-sky-500 to-blue-500', 
-            'from-amber-400 to-yellow-500',
-            'from-blue-400 to-amber-400'
-          ];
-          
-          return (
-            <div 
-              key={index} 
-              className="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 animate-slide-in-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
-              <div className="relative p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${gradients[index]} shadow-lg transform transition-transform group-hover:scale-110`}>
-                    <Icono className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900 transition-colors group-hover:text-gray-700">{tarjeta.valor}</div>
+      {/* Cursor follower */}
+      <div 
+        className="fixed w-4 h-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full pointer-events-none z-50 opacity-50 transition-all duration-100"
+        style={{
+          left: mousePosition.x - 8,
+          top: mousePosition.y - 8,
+          transform: `scale(${Math.sin(Date.now() * 0.01) * 0.3 + 1})`,
+        }}
+      />
+
+      <div className="relative z-10 p-6 space-y-12">
+        {/* Hero Section */}
+        <div 
+          className="text-center py-20"
+          style={{
+            transform: `translateY(${scrollY * 0.3}px)`,
+          }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-96 h-96 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 rounded-full opacity-20 animate-spin" style={{ animationDuration: '20s' }}></div>
+            </div>
+            <div className="relative z-10">
+              <div className="flex justify-center mb-8">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-50 animate-pulse"></div>
+                  <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-full">
+                    <Sparkles className="h-16 w-16 text-white animate-bounce" />
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{tarjeta.titulo}</h3>
-                  <p className="text-sm text-gray-600">{tarjeta.descripcion}</p>
+              </div>
+              
+              <h1 className="text-7xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 animate-pulse">
+                ¡Hola Brenda y Claudia!
+              </h1>
+              
+              <p className="text-2xl text-gray-700 mb-4 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                Bienvenidas a su Sistema de Inventario Inteligente
+              </p>
+              
+              <div className="flex items-center justify-center space-x-4 text-lg text-gray-600 animate-fade-in-up" style={{ animationDelay: '1s' }}>
+                <Calendar className="h-5 w-5" />
+                <span>{currentTime.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                <Clock className="h-5 w-5 ml-4" />
+                <span>{currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Introducción */}
+        <div 
+          className="max-w-4xl mx-auto text-center mb-16 animate-fade-in-up"
+          style={{ 
+            animationDelay: '1.5s',
+            transform: `translateY(${scrollY * 0.1}px)`,
+          }}
+        >
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20">
+            <div className="flex justify-center mb-6">
+              <div className="bg-gradient-to-r from-emerald-500 to-blue-500 p-4 rounded-2xl">
+                <Rocket className="h-12 w-12 text-white" />
+              </div>
+            </div>
+            <h2 className="text-4xl font-bold text-gray-800 mb-4">Su Nueva Herramienta de Gestión</h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Esta aplicación ha sido diseñada especialmente para revolucionar la forma en que manejan su inventario. 
+              Cada sección está pensada para simplificar sus procesos y brindarles información valiosa para tomar las mejores decisiones.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-full">
+                <Heart className="h-5 w-5" />
+                <span className="font-medium">Hecho con dedicación para ustedes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Secciones de la aplicación */}
+        <div className="space-y-16">
+          {secciones.map((seccion, index) => {
+            const Icono = seccion.icono;
+            const isEven = index % 2 === 0;
+            
+            return (
+              <div 
+                key={seccion.id}
+                className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12 animate-fade-in-up`}
+                style={{ 
+                  animationDelay: `${2 + index * 0.3}s`,
+                  transform: `translateY(${scrollY * (0.05 + index * 0.02)}px)`,
+                }}
+              >
+                {/* Tarjeta principal */}
+                <div className="flex-1">
+                  <div className="group relative overflow-hidden rounded-3xl bg-white/90 backdrop-blur-sm shadow-2xl border border-white/20 p-8 hover:shadow-3xl transition-all duration-500 hover:-translate-y-2">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${seccion.gradiente} opacity-5 group-hover:opacity-10 transition-opacity duration-500`}></div>
+                    
+                    <div className="relative z-10">
+                      <div className="flex items-center mb-6">
+                        <div className={`relative p-4 rounded-2xl bg-gradient-to-br ${seccion.gradiente} shadow-lg mr-4 group-hover:scale-110 transition-transform duration-300`}>
+                          <Icono className="h-8 w-8 text-white" />
+                          <div className="absolute inset-0 bg-white/20 rounded-2xl animate-pulse"></div>
+                        </div>
+                        <div>
+                          <h3 className="text-3xl font-bold text-gray-800 mb-2">{seccion.titulo}</h3>
+                          <p className="text-lg text-gray-600">{seccion.descripcion}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {seccion.caracteristicas.map((caracteristica, idx) => (
+                          <div 
+                            key={idx} 
+                            className="flex items-start space-x-3 group-hover:translate-x-2 transition-transform duration-300"
+                            style={{ transitionDelay: `${idx * 100}ms` }}
+                          >
+                            <div className={`mt-2 w-2 h-2 rounded-full bg-gradient-to-r ${seccion.gradiente} flex-shrink-0`}></div>
+                            <p className="text-gray-700 leading-relaxed">{caracteristica}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-8">
+                        <button className={`group/btn relative overflow-hidden bg-gradient-to-r ${seccion.gradiente} text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}>
+                          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                          <div className="relative flex items-center space-x-2">
+                            <span>Explorar {seccion.titulo}</span>
+                            <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visualización interactiva */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className={`w-full h-80 rounded-3xl bg-gradient-to-br ${seccion.gradiente} p-8 shadow-2xl overflow-hidden`}>
+                      <div className="absolute inset-0 bg-black/10"></div>
+                      <div className="relative z-10 h-full flex flex-col justify-center items-center text-white">
+                        <div className="relative mb-6">
+                          <div className="absolute inset-0 bg-white/20 rounded-full blur-xl animate-pulse"></div>
+                          <div className="relative bg-white/20 backdrop-blur-sm p-6 rounded-full">
+                            <Icono className="h-16 w-16 animate-bounce" />
+                          </div>
+                        </div>
+                        <h4 className="text-2xl font-bold mb-4 text-center">Vista Previa</h4>
+                        <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+                          {[1, 2, 3, 4].map((item) => (
+                            <div 
+                              key={item} 
+                              className="bg-white/20 backdrop-blur-sm rounded-lg p-4 animate-pulse"
+                              style={{ animationDelay: `${item * 200}ms` }}
+                            >
+                              <div className="h-3 bg-white/40 rounded mb-2"></div>
+                              <div className="h-2 bg-white/30 rounded"></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Elementos decorativos animados */}
+                      <div className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full animate-ping"></div>
+                      <div className="absolute bottom-4 left-4 w-6 h-6 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+                      <div className="absolute top-1/2 left-4 w-4 h-4 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '2s' }}></div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Resumen de movimientos del mes */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-lg border border-blue-200 hover:shadow-xl transition-all duration-300">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-blue-500/10"></div>
-          <div className="relative">
-            <div className="flex items-center mb-4">
-              <div className="p-2 bg-blue-500 rounded-lg mr-3">
-                <TrendingUp className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-blue-900">Entradas del Mes</h3>
-                <p className="text-sm text-blue-700">Valor de compras registradas</p>
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-blue-600">
-              {formatCurrency(resumen.entradasMes)}
-            </div>
-          </div>
+            );
+          })}
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 p-6 shadow-lg border border-amber-200 hover:shadow-xl transition-all duration-300">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-amber-500/10"></div>
-          <div className="relative">
-            <div className="flex items-center mb-4">
-              <div className="p-2 bg-amber-500 rounded-lg mr-3">
-                <TrendingDown className="h-5 w-5 text-white" />
+        {/* Call to Action Final */}
+        <div 
+          className="text-center py-16 animate-fade-in-up"
+          style={{ 
+            animationDelay: '4s',
+            transform: `translateY(${scrollY * 0.1}px)`,
+          }}
+        >
+          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative z-10">
+              <div className="flex justify-center mb-6">
+                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                  <Star className="h-12 w-12 text-yellow-300 animate-spin" style={{ animationDuration: '3s' }} />
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-amber-900">Salidas del Mes</h3>
-                <p className="text-sm text-amber-700">Valor de ventas/salidas</p>
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-amber-600">
-              {formatCurrency(resumen.salidasMes)}
-            </div>
-          </div>
-        </div>
-
-        <div className={`relative overflow-hidden rounded-2xl p-6 shadow-lg border hover:shadow-xl transition-all duration-300 ${
-          resumen.diferenciaMes >= 0 
-            ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200' 
-            : 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200'
-        }`}>
-          <div className={`absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full ${
-            resumen.diferenciaMes >= 0 ? 'bg-blue-500/10' : 'bg-amber-500/10'
-          }`}></div>
-          <div className="relative">
-            <div className="flex items-center mb-4">
-              <div className={`p-2 rounded-lg mr-3 ${
-                resumen.diferenciaMes >= 0 ? 'bg-blue-500' : 'bg-amber-500'
-              }`}>
-                <TrendingUp className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className={`font-bold ${
-                  resumen.diferenciaMes >= 0 ? 'text-blue-900' : 'text-amber-900'
-                }`}>Diferencia del Mes</h3>
-                <p className={`text-sm ${
-                  resumen.diferenciaMes >= 0 ? 'text-blue-700' : 'text-amber-700'
-                }`}>Entradas - Salidas</p>
-              </div>
-            </div>
-            <div className={`text-3xl font-bold ${
-              resumen.diferenciaMes >= 0 ? 'text-blue-600' : 'text-amber-600'
-            }`}>
-              {formatCurrency(resumen.diferenciaMes)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mensaje de bienvenida para nuevos usuarios */}
-      {resumen.totalProductos === 0 && resumen.totalProveedores === 0 && (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-amber-400 p-8 text-white shadow-2xl">
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative z-10">
-            <div className="flex items-center mb-6">
-              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm mr-4">
-                <Package className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold mb-1">¡Bienvenido a tu Sistema de Inventario!</h2>
-                <p className="text-white/80 text-lg">
-                  Comienza registrando tus primeros productos y proveedores
-                </p>
+              <h2 className="text-4xl font-bold mb-6">¡Están Listas Para Comenzar!</h2>
+              <p className="text-xl mb-8 max-w-2xl mx-auto">
+                Su nuevo sistema de inventario está configurado y esperando. Cada sección les ayudará a optimizar sus procesos y tomar decisiones más inteligentes.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button className="bg-white text-blue-600 px-8 py-4 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2">
+                  <Play className="h-5 w-5" />
+                  <span>Comenzar Tour</span>
+                </button>
+                <button className="border-2 border-white text-white px-8 py-4 rounded-2xl font-bold hover:bg-white hover:text-blue-600 transition-all duration-300 flex items-center justify-center space-x-2">
+                  <Compass className="h-5 w-5" />
+                  <span>Explorar Libremente</span>
+                </button>
               </div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-              <p className="text-white/90 mb-4 text-base">
-                Esta aplicación te ayudará a controlar tu inventario de manera eficiente. 
-                Puedes comenzar por:
-              </p>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-center text-white/90">
-                  <div className="w-2 h-2 bg-white/60 rounded-full mr-3"></div>
-                  <span>Registrar tus proveedores</span>
-                </div>
-                <div className="flex items-center text-white/90">
-                  <div className="w-2 h-2 bg-white/60 rounded-full mr-3"></div>
-                  <span>Agregar productos al catálogo</span>
-                </div>
-                <div className="flex items-center text-white/90">
-                  <div className="w-2 h-2 bg-white/60 rounded-full mr-3"></div>
-                  <span>Registrar entradas de inventario</span>
-                </div>
-                <div className="flex items-center text-white/90">
-                  <div className="w-2 h-2 bg-white/60 rounded-full mr-3"></div>
-                  <span>Controlar salidas y existencias</span>
-                </div>
-              </div>
-            </div>
+            {/* Efectos de fondo */}
+            <div className="absolute -top-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
           </div>
-          <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
-          <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/5 blur-xl"></div>
         </div>
-      )}
+      </div>
+
+      {/* CSS personalizado para animaciones */}
+      <style jsx>{`
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out forwards;
+          opacity: 0;
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+      `}</style>
     </div>
   );
 }
