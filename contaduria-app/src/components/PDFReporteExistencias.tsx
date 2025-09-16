@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
 
   tableHeaderCell: {
     paddingVertical: 5,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
 
   tableCell: {
     paddingVertical: 4,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     fontSize: 9,
     color: '#1f2937',
   },
@@ -187,18 +187,18 @@ const styles = StyleSheet.create({
 
   totalLabelCell: {
     paddingVertical: 5,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     color: '#0f172a',
   },
 
-  colProveedor: { width: '45%' },
-  colFactura: { width: '14%' },
-  colFecha: { width: '14%' },
-  colCantidad: { width: '11%' },
-  colPrecio: { width: '8%' },
-  colTotal: { width: '8%' },
+  colProveedor: { width: '38%' },
+  colFactura: { width: '12%' },
+  colFecha: { width: '12%' },
+  colCantidad: { width: '12%' },
+  colPrecio: { width: '13%' },
+  colTotal: { width: '13%' },
 
   footer: {
     marginTop: 10,
@@ -246,6 +246,37 @@ interface PDFReporteExistenciasProps {
   valorTotalGeneral: number;
 }
 
+// Función para sanitizar datos
+const sanitizeData = (existenciasPorTipo: any[], proveedores: any[]) => {
+  const sanitizedExistencias = (existenciasPorTipo || []).filter(Boolean).map(tipo => ({
+    tipoId: String(tipo?.tipoId || ''),
+    tipoNombre: String(tipo?.tipoNombre || 'Sin nombre'),
+    totalExistencia: Number(tipo?.totalExistencia || 0),
+    valorTotal: Number(tipo?.valorTotal || 0),
+    productos: (tipo?.productos || []).filter(Boolean).map((producto: any) => ({
+      nombre: String(producto?.nombre || 'Sin nombre'),
+      existenciaActual: Number(producto?.existenciaActual || 0),
+      precioPromedio: Number(producto?.precioPromedio || 0),
+      valorInventario: Number(producto?.valorInventario || 0),
+      lotes: (producto?.lotes || []).filter(Boolean).map((lote: any) => ({
+        id: lote?.id || Math.random(),
+        fecha: lote?.fecha ? new Date(lote.fecha) : new Date(),
+        cantidadDisponible: Number(lote?.cantidadDisponible || 0),
+        precioUnitario: Number(lote?.precioUnitario || 0),
+        numeroFactura: String(lote?.numeroFactura || ''),
+        proveedorId: Number(lote?.proveedorId || 0)
+      }))
+    }))
+  }));
+
+  const sanitizedProveedores = (proveedores || []).filter(Boolean).map(proveedor => ({
+    id: Number(proveedor?.id || 0),
+    nombre: String(proveedor?.nombre || 'Sin nombre')
+  }));
+
+  return { sanitizedExistencias, sanitizedProveedores };
+};
+
 // Componente del documento PDF simplificado
 const ReporteExistenciasPDF = ({ 
   existenciasPorTipo, 
@@ -254,46 +285,37 @@ const ReporteExistenciasPDF = ({
   valorTotalGeneral 
 }: PDFReporteExistenciasProps) => {
   
-  // Validación de datos
-  const datosValidos = Array.isArray(existenciasPorTipo) && 
-                      Array.isArray(proveedores) && 
-                      !isNaN(totalExistenciaGeneral) && 
-                      !isNaN(valorTotalGeneral);
+  try {
+    // Sanitizar y validar datos
+    const { sanitizedExistencias, sanitizedProveedores } = sanitizeData(existenciasPorTipo, proveedores);
+    const safeTotal = Number(totalExistenciaGeneral || 0);
+    const safeValor = Number(valorTotalGeneral || 0);
 
-  if (!datosValidos) {
-    return (
-      <Document>
-        <Page size="A4" style={styles.page}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Error en el reporte</Text>
-            <Text style={styles.headerSubtitle}>Los datos proporcionados no son válidos</Text>
-          </View>
-        </Page>
-      </Document>
+    // Validación básica
+    if (!Array.isArray(sanitizedExistencias) || !Array.isArray(sanitizedProveedores)) {
+      throw new Error('Datos inválidos');
+    }
+
+    const fechaReporte = new Date();
+    const fechaGeneracion = fechaReporte.toLocaleDateString('es-MX');
+    const fechaEncabezado = fechaReporte
+      .toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
+      .toUpperCase();
+    
+    const proveedorIdToNombre: Record<number, string> = sanitizedProveedores.reduce(
+      (acc: Record<number, string>, proveedor) => {
+        acc[proveedor.id] = proveedor.nombre;
+        return acc;
+      },
+      {}
     );
-  }
 
-  const fechaReporte = new Date();
-  const fechaGeneracion = fechaReporte.toLocaleDateString('es-MX');
-  const fechaEncabezado = fechaReporte
-    .toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
-    .toUpperCase();
-  const proveedorIdToNombre: Record<number, string> = (proveedores || []).reduce(
-    (acc: Record<number, string>, proveedor: any) => {
-      if (proveedor && typeof proveedor.id === 'number') {
-        acc[proveedor.id] = proveedor.nombre || `Proveedor ${proveedor.id}`;
-      }
-      return acc;
-    },
-    {}
-  );
-
-  const totalLotes = (existenciasPorTipo || []).reduce((sum, tipo) => {
-    const lotesPorTipo = (tipo.productos || []).reduce((acum, producto) => {
-      return acum + (producto.lotes?.length || 0);
+    const totalLotes = sanitizedExistencias.reduce((sum, tipo) => {
+      const lotesPorTipo = tipo.productos.reduce((acum: number, producto: any) => {
+        return acum + (producto.lotes?.length || 0);
+      }, 0);
+      return sum + lotesPorTipo;
     }, 0);
-    return sum + lotesPorTipo;
-  }, 0);
 
   const fontScale = calculateFontScale(totalLotes);
   const scaleValue = (value: number, min: number): number => {
@@ -349,7 +371,7 @@ const ReporteExistenciasPDF = ({
           <Text style={[styles.headerDate, dynamicStyles.headerDate]}>{fechaEncabezado}</Text>
         </View>
 
-        {existenciasPorTipo.map((tipo, tipoIndex) => (
+        {sanitizedExistencias.map((tipo, tipoIndex) => (
           <View key={`tipo-${tipoIndex}`} style={styles.typeSection} wrap={false}>
             <View style={styles.typeCard}>
               <Text style={[styles.typeTitle, dynamicStyles.typeTitle]}>
@@ -384,8 +406,8 @@ const ReporteExistenciasPDF = ({
               </View>
 
               {(() => {
-                const lotes = (tipo.productos || []).flatMap((producto) =>
-                  (producto.lotes || []).map((lote) => ({ lote, productoNombre: producto.nombre }))
+                const lotes = (tipo.productos || []).flatMap((producto: any) =>
+                  (producto.lotes || []).map((lote: any) => ({ lote, productoNombre: producto.nombre }))
                 );
 
                 const rows: any[] = [];
@@ -402,7 +424,7 @@ const ReporteExistenciasPDF = ({
                     </View>
                   );
                 } else {
-                  lotes.forEach(({ lote, productoNombre }, idx) => {
+                  lotes.forEach(({ lote, productoNombre }: any, idx: number) => {
                     const rowStyle = idx % 2 === 1 ? [styles.tableRow, styles.tableRowAlt] : [styles.tableRow];
                     const proveedorNombre = proveedorIdToNombre[lote.proveedorId] || '—';
                     const proveedorTexto = productoNombre ? `${proveedorNombre} – ${productoNombre}` : proveedorNombre;
@@ -453,9 +475,9 @@ const ReporteExistenciasPDF = ({
             <Text style={[styles.totalLabelCell, styles.colProveedor, dynamicStyles.totalLabel]}>Total general kg</Text>
             <Text style={[styles.tableCell, styles.colFactura, dynamicStyles.tableCell]}></Text>
             <Text style={[styles.tableCell, styles.colFecha, dynamicStyles.tableCell]}></Text>
-            <Text style={[styles.tableCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableCell]}>{formatNumberPDF(totalExistenciaGeneral, 2)}</Text>
+            <Text style={[styles.tableCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableCell]}>{formatNumberPDF(safeTotal, 2)}</Text>
             <Text style={[styles.totalLabelCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.totalLabel]}>Total $</Text>
-            <Text style={[styles.tableCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableCell]}>{formatCurrencyPDF(valorTotalGeneral)}</Text>
+            <Text style={[styles.tableCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableCell]}>{formatCurrencyPDF(safeValor)}</Text>
           </View>
         </View>
 
@@ -464,7 +486,21 @@ const ReporteExistenciasPDF = ({
         </Text>
       </Page>
     </Document>
-  );
+    );
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Error en el reporte</Text>
+            <Text style={styles.headerSubtitle}>No se pudieron procesar los datos</Text>
+            <Text style={styles.headerDate}>Por favor, intenta nuevamente</Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  }
 };
 
 export function PDFReporteExistencias({ 

@@ -376,6 +376,19 @@ export function Entradas() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">
+                    Número de Factura
+                  </label>
+                  <input
+                    type="text"
+                    value={formulario.numeroFactura}
+                    onChange={(e) => setFormulario({ ...formulario, numeroFactura: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: FAC-2024-001"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
                     Fecha *
                   </label>
                   <input
@@ -416,19 +429,6 @@ export function Entradas() {
                     onChange={(e) => setFormulario({ ...formulario, precio: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0.00"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Número de Factura
-                  </label>
-                  <input
-                    type="text"
-                    value={formulario.numeroFactura}
-                    onChange={(e) => setFormulario({ ...formulario, numeroFactura: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: FAC-2024-001"
                   />
                 </div>
               </div>
