@@ -16,6 +16,7 @@ import {
   ArrowRight,
   Play
 } from 'lucide-react';
+import { FraseDelDia } from '../components/FraseDelDia';
 
 interface Seccion {
   id: string;
@@ -225,6 +226,22 @@ export function Dashboard() {
             transform: `translateY(${scrollY * 0.1}px)`,
           }}
         >
+           {/* Frase del Día */}
+        <div 
+          className="max-w-4xl mx-auto animate-fade-in-up"
+          style={{ 
+            animationDelay: '2.2s',
+            transform: `translateY(${scrollY * 0.08}px)`,
+          }}
+        >
+          <FraseDelDia 
+            variant="hero" 
+            mostrarBotonRefresh={true}
+            mostrarSelectorCategoria={true}
+            className="hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+          <div className="my-12 border-t border-gray-200"></div>
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20">
             <div className="flex justify-center mb-6">
               <div className="bg-gradient-to-r from-emerald-500 to-blue-500 p-4 rounded-2xl">
@@ -244,6 +261,8 @@ export function Dashboard() {
             </div>
           </div>
         </div>
+
+       
 
         {/* Secciones de la aplicación */}
         <div className="space-y-16">
