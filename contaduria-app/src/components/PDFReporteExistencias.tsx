@@ -21,140 +21,201 @@ const formatNumberPDF = (number: number, decimals: number = 2): string => {
   return number.toFixed(decimals).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 };
 
+// Ajusta los tamaños de letra según la cantidad de filas que se mostrarán
+const calculateFontScale = (totalRows: number): number => {
+  if (totalRows <= 10) return 1.05;
+  if (totalRows <= 20) return 1;
+  if (totalRows <= 40) return 0.92;
+  if (totalRows <= 60) return 0.88;
+  return 0.8;
+};
 
-// Estilos simplificados
+
+// Estilos inspirados en formato de inventario impreso
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#ffffff',
-    padding: 20,
-    fontSize: 10,
-  },
-  
-  header: {
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#cccccc',
-    paddingBottom: 10
-  },
-  
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    textAlign: 'center'
-  },
-  
-  subtitle: {
-    fontSize: 12,
-    color: '#666666',
-    textAlign: 'center'
+    backgroundColor: '#f5f6fb',
+    paddingTop: 28,
+    paddingBottom: 24,
+    paddingHorizontal: 26,
+    fontFamily: 'Helvetica',
+    fontSize: 9,
   },
 
-  summaryContainer: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    marginBottom: 20,
-    borderRadius: 5
+  header: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d0d5dd',
+    borderRadius: 10,
+    marginBottom: 16,
   },
-  
-  summaryTitle: {
-    fontSize: 14,
+
+  headerTitle: {
+    fontSize: 17,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center'
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: '#111827',
   },
-  
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5
-  },
-  
-  summaryLabel: {
+
+  headerSubtitle: {
     fontSize: 10,
-    color: '#666666'
+    textTransform: 'uppercase',
+    marginTop: 4,
+    color: '#4b5563',
   },
-  
-  summaryValue: {
-    fontSize: 10,
-    fontWeight: 'bold'
+
+  headerDate: {
+    fontSize: 9,
+    marginTop: 6,
+    textTransform: 'uppercase',
+    color: '#6b7280',
   },
 
   typeSection: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
-  
-  typeHeader: {
-    backgroundColor: '#4a90e2',
-    color: '#ffffff',
-    padding: 8,
-    marginBottom: 10
+
+  typeCard: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d0d5dd',
+    borderRadius: 10,
+    padding: 12,
   },
-  
+
   typeTitle: {
-    fontSize: 12,
-    fontWeight: 'bold'
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    color: '#111827',
+  },
+
+  typeMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+
+  metaGroup: {
+    flexDirection: 'row',
+  },
+
+  metaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    backgroundColor: '#eff6ff',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginRight: 6,
+  },
+
+  metaBadgeLabel: {
+    fontSize: 8,
+    textTransform: 'uppercase',
+    color: '#1d4ed8',
+    letterSpacing: 0.4,
+  },
+
+  metaBadgeValue: {
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginLeft: 4,
   },
 
   table: {
     borderWidth: 1,
-    borderColor: '#cccccc'
+    borderColor: '#d1d5db',
+    overflow: 'hidden',
+    borderRadius: 6,
+    backgroundColor: '#ffffff',
   },
-  
+
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f0f0f0',
-    padding: 5,
+    backgroundColor: '#111827',
     borderBottomWidth: 1,
-    borderBottomColor: '#cccccc'
+    borderBottomColor: '#111827',
   },
-  
+
+  tableHeaderCell: {
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    fontSize: 9,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#ffffff',
+  },
+
   tableRow: {
     flexDirection: 'row',
-    padding: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
-    minHeight: 20
-  },
-  
-  tableRowAlt: {
-    backgroundColor: '#f9f9f9'
-  },
-  
-  tableCell: {
-    fontSize: 8,
-    paddingHorizontal: 3,
-    paddingVertical: 2,
-    textAlign: 'left'
-  },
-  
-  tableCellRight: {
-    textAlign: 'right'
-  },
-  
-  tableCellBold: {
-    fontWeight: 'bold'
+    borderBottomColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
   },
 
-  // Anchos de columna para tabla de lotes
-  col1: { width: '20%' }, // Proveedor
-  col2: { width: '20%' }, // Producto
-  col3: { width: '14%' }, // No. factura
-  col4: { width: '14%' }, // Fecha
-  col5: { width: '12%' }, // Kilos
-  col6: { width: '10%' }, // Precio
-  col7: { width: '10%' }, // Total
+  tableRowAlt: {
+    backgroundColor: '#f9fafb',
+  },
+
+  tableCell: {
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    fontSize: 9,
+    color: '#1f2937',
+  },
+
+  tableCellRight: {
+    textAlign: 'right',
+  },
+
+  totalRow: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#dbeafe',
+    backgroundColor: '#f3f4f6',
+  },
+
+  totalLabelCell: {
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    color: '#0f172a',
+  },
+
+  colProveedor: { width: '45%' },
+  colFactura: { width: '14%' },
+  colFecha: { width: '14%' },
+  colCantidad: { width: '11%' },
+  colPrecio: { width: '8%' },
+  colTotal: { width: '8%' },
 
   footer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    marginTop: 10,
     textAlign: 'center',
     fontSize: 8,
-    color: '#999999'
-  }
+    color: '#6b7280',
+    textTransform: 'uppercase',
+  },
+
+  globalTotalsCard: {
+    marginTop: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d0d5dd',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
 });
 
 interface ExistenciasPorTipo {
@@ -204,101 +265,202 @@ const ReporteExistenciasPDF = ({
       <Document>
         <Page size="A4" style={styles.page}>
           <View style={styles.header}>
-            <Text style={styles.title}>Error en el Reporte</Text>
-            <Text style={styles.subtitle}>Los datos proporcionados no son válidos</Text>
+            <Text style={styles.headerTitle}>Error en el reporte</Text>
+            <Text style={styles.headerSubtitle}>Los datos proporcionados no son válidos</Text>
           </View>
         </Page>
       </Document>
     );
   }
 
-  const fechaActual = new Date().toLocaleDateString('es-MX');
+  const fechaReporte = new Date();
+  const fechaGeneracion = fechaReporte.toLocaleDateString('es-MX');
+  const fechaEncabezado = fechaReporte
+    .toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
+    .toUpperCase();
+  const proveedorIdToNombre: Record<number, string> = (proveedores || []).reduce(
+    (acc: Record<number, string>, proveedor: any) => {
+      if (proveedor && typeof proveedor.id === 'number') {
+        acc[proveedor.id] = proveedor.nombre || `Proveedor ${proveedor.id}`;
+      }
+      return acc;
+    },
+    {}
+  );
+
+  const totalLotes = (existenciasPorTipo || []).reduce((sum, tipo) => {
+    const lotesPorTipo = (tipo.productos || []).reduce((acum, producto) => {
+      return acum + (producto.lotes?.length || 0);
+    }, 0);
+    return sum + lotesPorTipo;
+  }, 0);
+
+  const fontScale = calculateFontScale(totalLotes);
+  const scaleValue = (value: number, min: number): number => {
+    const scaled = Number((value * fontScale).toFixed(2));
+    return Math.max(min, scaled);
+  };
+
+  const dynamicStyles = StyleSheet.create({
+    page: {
+      fontSize: scaleValue(9, 7),
+      paddingHorizontal: Math.max(20, Number((26 * (fontScale >= 1 ? 1 : 0.9)).toFixed(0))),
+      paddingTop: Math.max(20, Number((28 * (fontScale >= 1 ? 1 : 0.9)).toFixed(0))),
+      paddingBottom: Math.max(18, Number((24 * (fontScale >= 1 ? 1 : 0.9)).toFixed(0))),
+    },
+    headerTitle: {
+      fontSize: scaleValue(16, 12)
+    },
+    headerSubtitle: {
+      fontSize: scaleValue(10, 8)
+    },
+    headerDate: {
+      fontSize: scaleValue(9, 7)
+    },
+    typeTitle: {
+      fontSize: scaleValue(11, 9)
+    },
+    metaBadgeLabel: {
+      fontSize: scaleValue(8, 7)
+    },
+    metaBadgeValue: {
+      fontSize: scaleValue(9, 7)
+    },
+    tableHeaderCell: {
+      fontSize: scaleValue(9, 7)
+    },
+    tableCell: {
+      fontSize: scaleValue(9, 6)
+    },
+    totalLabel: {
+      fontSize: scaleValue(9, 7)
+    },
+    footer: {
+      fontSize: scaleValue(8, 6)
+    }
+  });
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Header */}
+      <Page size="A4" style={[styles.page, dynamicStyles.page]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Reporte de Existencias</Text>
-          <Text style={styles.subtitle}>Generado el {fechaActual}</Text>
+          <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Inventario de Existencias</Text>
+          <Text style={[styles.headerSubtitle, dynamicStyles.headerSubtitle]}>Resumen por tipo de producto</Text>
+          <Text style={[styles.headerDate, dynamicStyles.headerDate]}>{fechaEncabezado}</Text>
         </View>
 
-        {/* Resumen General */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Resumen General</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total de Existencias:</Text>
-            <Text style={styles.summaryValue}>{formatNumberPDF(totalExistenciaGeneral, 2)} Kg</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Valor Total del Inventario:</Text>
-            <Text style={styles.summaryValue}>{formatCurrencyPDF(valorTotalGeneral)}</Text>
-          </View>
-        </View>
-
-        {/* Tipos de Productos */}
         {existenciasPorTipo.map((tipo, tipoIndex) => (
           <View key={`tipo-${tipoIndex}`} style={styles.typeSection} wrap={false}>
-            {/* Header del Tipo */}
-            <View style={styles.typeHeader}>
-              <Text style={styles.typeTitle}>
+            <View style={styles.typeCard}>
+              <Text style={[styles.typeTitle, dynamicStyles.typeTitle]}>
                 {tipo.tipoNombre || `Tipo ${tipoIndex + 1}`}
               </Text>
-              <Text style={{ fontSize: 9, marginTop: 2 }}>
-                {tipo.productos?.length || 0} producto(s) • {formatNumberPDF(tipo.totalExistencia, 2)} Kg • {formatCurrencyPDF(tipo.valorTotal)}
-              </Text>
-            </View>
 
-            {/* Tabla de Lotes */}
-            <View style={styles.table}>
-              {/* Header de la tabla */}
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableCell, styles.col1, { fontWeight: 'bold' }]}>Proveedor</Text>
-                <Text style={[styles.tableCell, styles.col2, { fontWeight: 'bold' }]}>Producto</Text>
-                <Text style={[styles.tableCell, styles.col3, { fontWeight: 'bold' }]}>No. factura</Text>
-                <Text style={[styles.tableCell, styles.col4, { fontWeight: 'bold' }]}>Fecha</Text>
-                <Text style={[styles.tableCell, styles.col5, { fontWeight: 'bold', textAlign: 'right' }]}>Kilos</Text>
-                <Text style={[styles.tableCell, styles.col6, { fontWeight: 'bold', textAlign: 'right' }]}>Precio</Text>
-                <Text style={[styles.tableCell, styles.col7, { fontWeight: 'bold', textAlign: 'right' }]}>Total</Text>
+              <View style={styles.typeMetaRow}>
+                <View style={styles.metaGroup}>
+                  <View style={styles.metaBadge}>
+                    <Text style={[styles.metaBadgeLabel, dynamicStyles.metaBadgeLabel]}>Productos</Text>
+                    <Text style={[styles.metaBadgeValue, dynamicStyles.metaBadgeValue]}>{tipo.productos?.length || 0}</Text>
+                  </View>
+                  <View style={styles.metaBadge}>
+                    <Text style={[styles.metaBadgeLabel, dynamicStyles.metaBadgeLabel]}>Total kg</Text>
+                    <Text style={[styles.metaBadgeValue, dynamicStyles.metaBadgeValue]}>{formatNumberPDF(tipo.totalExistencia || 0, 2)}</Text>
+                  </View>
+                </View>
+                <View style={styles.metaBadge}>
+                  <Text style={[styles.metaBadgeLabel, dynamicStyles.metaBadgeLabel]}>Valor $</Text>
+                  <Text style={[styles.metaBadgeValue, dynamicStyles.metaBadgeValue]}>{formatCurrencyPDF(tipo.valorTotal || 0)}</Text>
+                </View>
               </View>
 
-              {/* Filas de lotes */}
-              {(() => {
-                const proveedorIdToNombre: Record<number, string> = (proveedores || []).reduce((acc: Record<number, string>, p: any) => {
-                  if (p && typeof p.id === 'number') acc[p.id] = p.nombre || `Proveedor ${p.id}`;
-                  return acc;
-                }, {});
+              <View style={styles.table}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableHeaderCell, styles.colProveedor, dynamicStyles.tableHeaderCell]}>Proveedor</Text>
+                  <Text style={[styles.tableHeaderCell, styles.colFactura, dynamicStyles.tableHeaderCell]}>No. fact</Text>
+                  <Text style={[styles.tableHeaderCell, styles.colFecha, dynamicStyles.tableHeaderCell]}>Fecha</Text>
+                  <Text style={[styles.tableHeaderCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableHeaderCell]}>Cantidad</Text>
+                <Text style={[styles.tableHeaderCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.tableHeaderCell]}>Precio</Text>
+                <Text style={[styles.tableHeaderCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableHeaderCell]}>Total</Text>
+              </View>
 
+              {(() => {
                 const lotes = (tipo.productos || []).flatMap((producto) =>
                   (producto.lotes || []).map((lote) => ({ lote, productoNombre: producto.nombre }))
                 );
 
-                return lotes.map(({ lote }, idx) => {
-                  const rowStyle = idx % 2 === 1 ? [styles.tableRow, styles.tableRowAlt] : [styles.tableRow];
-                  const proveedorNombre = proveedorIdToNombre[lote.proveedorId] || '—';
-                  const total = (lote.cantidadDisponible || 0) * (lote.precioUnitario || 0);
-                  const fechaStr = new Date(lote.fecha).toLocaleDateString('es-MX');
+                const rows: any[] = [];
 
-                  return (
-                    <View key={`lote-${lote.id ?? idx}`} style={rowStyle}>
-                      <Text style={[styles.tableCell, styles.col1]}>{proveedorNombre}</Text>
-                      <Text style={[styles.tableCell, styles.col2]}>{(lotes[idx].productoNombre) || '—'}</Text>
-                      <Text style={[styles.tableCell, styles.col3]}>{lote.numeroFactura || '—'}</Text>
-                      <Text style={[styles.tableCell, styles.col4]}>{fechaStr}</Text>
-                      <Text style={[styles.tableCell, styles.tableCellRight, styles.col5]}>{formatNumberPDF(lote.cantidadDisponible || 0, 2)}</Text>
-                      <Text style={[styles.tableCell, styles.tableCellRight, styles.col6]}>{formatCurrencyPDF(lote.precioUnitario || 0)}</Text>
-                      <Text style={[styles.tableCell, styles.tableCellRight, styles.col7]}>{formatCurrencyPDF(total)}</Text>
+                if (!lotes.length) {
+                  rows.push(
+                    <View style={styles.tableRow} key={`tipo-${tipoIndex}-empty`}>
+                      <Text style={[styles.tableCell, styles.colProveedor, dynamicStyles.tableCell]}>Sin registros</Text>
+                      <Text style={[styles.tableCell, styles.colFactura, dynamicStyles.tableCell]}></Text>
+                      <Text style={[styles.tableCell, styles.colFecha, dynamicStyles.tableCell]}></Text>
+                      <Text style={[styles.tableCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableCell]}>0.00</Text>
+                      <Text style={[styles.tableCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.tableCell]}>$0.00</Text>
+                      <Text style={[styles.tableCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableCell]}>$0.00</Text>
                     </View>
                   );
-                });
+                } else {
+                  lotes.forEach(({ lote, productoNombre }, idx) => {
+                    const rowStyle = idx % 2 === 1 ? [styles.tableRow, styles.tableRowAlt] : [styles.tableRow];
+                    const proveedorNombre = proveedorIdToNombre[lote.proveedorId] || '—';
+                    const proveedorTexto = productoNombre ? `${proveedorNombre} – ${productoNombre}` : proveedorNombre;
+                    const total = (lote.cantidadDisponible || 0) * (lote.precioUnitario || 0);
+                    const fechaStr = new Date(lote.fecha).toLocaleDateString('es-MX');
+
+                    rows.push(
+                      <View key={`lote-${lote.id ?? idx}`} style={rowStyle}>
+                        <Text style={[styles.tableCell, styles.colProveedor, dynamicStyles.tableCell]}>{proveedorTexto}</Text>
+                        <Text style={[styles.tableCell, styles.colFactura, dynamicStyles.tableCell]}>{lote.numeroFactura || '—'}</Text>
+                        <Text style={[styles.tableCell, styles.colFecha, dynamicStyles.tableCell]}>{fechaStr}</Text>
+                        <Text style={[styles.tableCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableCell]}>{formatNumberPDF(lote.cantidadDisponible || 0, 2)}</Text>
+                        <Text style={[styles.tableCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.tableCell]}>{formatCurrencyPDF(lote.precioUnitario || 0)}</Text>
+                        <Text style={[styles.tableCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableCell]}>{formatCurrencyPDF(total)}</Text>
+                      </View>
+                    );
+                  });
+                }
+
+                rows.push(
+                  <View style={styles.totalRow} key={`tipo-${tipoIndex}-totals`}>
+                    <Text style={[styles.totalLabelCell, styles.colProveedor, dynamicStyles.totalLabel]}>Total Kg</Text>
+                    <Text style={[styles.tableCell, styles.colFactura, dynamicStyles.tableCell]}></Text>
+                    <Text style={[styles.tableCell, styles.colFecha, dynamicStyles.tableCell]}></Text>
+                    <Text style={[styles.tableCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableCell]}>{formatNumberPDF(tipo.totalExistencia || 0, 2)}</Text>
+                    <Text style={[styles.totalLabelCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.totalLabel]}>Total $</Text>
+                    <Text style={[styles.tableCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableCell]}>{formatCurrencyPDF(tipo.valorTotal || 0)}</Text>
+                  </View>
+                );
+
+                return rows;
               })()}
+              </View>
             </View>
           </View>
         ))}
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Reporte generado automáticamente - {fechaActual}
+        <View style={styles.globalTotalsCard} wrap={false}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderCell, styles.colProveedor, dynamicStyles.tableHeaderCell]}>Total general</Text>
+            <Text style={[styles.tableHeaderCell, styles.colFactura, dynamicStyles.tableHeaderCell]}></Text>
+            <Text style={[styles.tableHeaderCell, styles.colFecha, dynamicStyles.tableHeaderCell]}></Text>
+            <Text style={[styles.tableHeaderCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableHeaderCell]}>Kg</Text>
+            <Text style={[styles.tableHeaderCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.tableHeaderCell]}>Etiqueta</Text>
+            <Text style={[styles.tableHeaderCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableHeaderCell]}>Monto</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalLabelCell, styles.colProveedor, dynamicStyles.totalLabel]}>Total general kg</Text>
+            <Text style={[styles.tableCell, styles.colFactura, dynamicStyles.tableCell]}></Text>
+            <Text style={[styles.tableCell, styles.colFecha, dynamicStyles.tableCell]}></Text>
+            <Text style={[styles.tableCell, styles.colCantidad, styles.tableCellRight, dynamicStyles.tableCell]}>{formatNumberPDF(totalExistenciaGeneral, 2)}</Text>
+            <Text style={[styles.totalLabelCell, styles.colPrecio, styles.tableCellRight, dynamicStyles.totalLabel]}>Total $</Text>
+            <Text style={[styles.tableCell, styles.colTotal, styles.tableCellRight, dynamicStyles.tableCell]}>{formatCurrencyPDF(valorTotalGeneral)}</Text>
+          </View>
+        </View>
+
+        <Text style={[styles.footer, dynamicStyles.footer]}>
+          Reporte generado automáticamente - {fechaGeneracion}
         </Text>
       </Page>
     </Document>

@@ -128,7 +128,7 @@ export function Dashboard() {
       valor: formatCurrency(resumen.valorInventario),
       descripcion: 'Valor total en existencias',
       icono: TrendingUp,
-      color: 'text-purple-600'
+      color: 'text-amber-600'
     },
     {
       titulo: 'Productos con Bajo Stock',
@@ -142,7 +142,7 @@ export function Dashboard() {
   return (
     <div className="space-y-8 p-6">
       {/* Header con gradiente */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-purple-600 to-cyan-500 p-8 text-white shadow-2xl animate-fade-in-scale">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-blue-500 to-amber-400 p-8 text-white shadow-2xl animate-fade-in-scale">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10">
           <h1 className="text-4xl font-bold tracking-tight mb-2">Dashboard de Inventario</h1>
@@ -160,9 +160,9 @@ export function Dashboard() {
           const Icono = tarjeta.icono;
           const gradients = [
             'from-blue-500 to-blue-600',
-            'from-emerald-500 to-emerald-600', 
-            'from-orange-500 to-orange-600',
-            'from-purple-500 to-purple-600'
+            'from-sky-500 to-blue-500', 
+            'from-amber-400 to-yellow-500',
+            'from-blue-400 to-amber-400'
           ];
           
           return (
@@ -193,37 +193,37 @@ export function Dashboard() {
 
       {/* Resumen de movimientos del mes */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 shadow-lg border border-emerald-200 hover:shadow-xl transition-all duration-300">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-emerald-500/10"></div>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-lg border border-blue-200 hover:shadow-xl transition-all duration-300">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-blue-500/10"></div>
           <div className="relative">
             <div className="flex items-center mb-4">
-              <div className="p-2 bg-emerald-500 rounded-lg mr-3">
+              <div className="p-2 bg-blue-500 rounded-lg mr-3">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-emerald-900">Entradas del Mes</h3>
-                <p className="text-sm text-emerald-700">Valor de compras registradas</p>
+                <h3 className="font-bold text-blue-900">Entradas del Mes</h3>
+                <p className="text-sm text-blue-700">Valor de compras registradas</p>
               </div>
             </div>
-            <div className="text-3xl font-bold text-emerald-600">
+            <div className="text-3xl font-bold text-blue-600">
               {formatCurrency(resumen.entradasMes)}
             </div>
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100 p-6 shadow-lg border border-rose-200 hover:shadow-xl transition-all duration-300">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-rose-500/10"></div>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100 p-6 shadow-lg border border-amber-200 hover:shadow-xl transition-all duration-300">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-16 w-16 rounded-full bg-amber-500/10"></div>
           <div className="relative">
             <div className="flex items-center mb-4">
-              <div className="p-2 bg-rose-500 rounded-lg mr-3">
+              <div className="p-2 bg-amber-500 rounded-lg mr-3">
                 <TrendingDown className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-rose-900">Salidas del Mes</h3>
-                <p className="text-sm text-rose-700">Valor de ventas/salidas</p>
+                <h3 className="font-bold text-amber-900">Salidas del Mes</h3>
+                <p className="text-sm text-amber-700">Valor de ventas/salidas</p>
               </div>
             </div>
-            <div className="text-3xl font-bold text-rose-600">
+            <div className="text-3xl font-bold text-amber-600">
               {formatCurrency(resumen.salidasMes)}
             </div>
           </div>
@@ -264,7 +264,7 @@ export function Dashboard() {
 
       {/* Mensaje de bienvenida para nuevos usuarios */}
       {resumen.totalProductos === 0 && resumen.totalProveedores === 0 && (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-8 text-white shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-amber-400 p-8 text-white shadow-2xl">
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="relative z-10">
             <div className="flex items-center mb-6">

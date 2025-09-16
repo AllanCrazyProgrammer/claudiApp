@@ -8,7 +8,6 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
-  BarChart3, 
   Settings,
   Moon,
   Sun,
@@ -28,7 +27,6 @@ const menuItems = [
   { id: 'entradas', label: 'Entradas', icon: TrendingUp },
   { id: 'salidas', label: 'Salidas', icon: TrendingDown },
   { id: 'existencias', label: 'Existencias', icon: Warehouse },
-  { id: 'reportes', label: 'Reportes', icon: BarChart3 },
   { id: 'configuracion', label: 'Configuración', icon: Settings },
 ];
 
@@ -48,7 +46,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 w-64 bg-white shadow-2xl border-r border-gray-200 transform transition-transform duration-300 ease-in-out z-50 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         {/* Header del sidebar con gradiente */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-yellow-500 p-6">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 flex items-center justify-between text-white">
             <h1 className="text-xl font-bold truncate">{configuracion.nombreEmpresa}</h1>
@@ -71,7 +69,7 @@ export function Layout({ children }: LayoutProps) {
                 key={item.id}
                 className={`w-full flex items-center px-4 py-3 rounded-xl text-left transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform scale-[1.02]' 
+                    ? 'bg-gradient-to-r from-blue-500 to-yellow-400 text-white shadow-lg transform scale-[1.02]' 
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}
                 onClick={() => setCurrentPage(item.id)}
@@ -129,7 +127,7 @@ export function Layout({ children }: LayoutProps) {
               </button>
               
               {/* Avatar/Profile placeholder */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-yellow-400 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
                 {configuracion.nombreEmpresa.charAt(0).toUpperCase()}
               </div>
             </div>

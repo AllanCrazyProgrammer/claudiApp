@@ -49,7 +49,7 @@ export const useAppStore = create<AppState>()(
       darkMode: false,
       currentPage: 'dashboard',
       configuracion: {
-        nombreEmpresa: 'Mi Empresa',
+        nombreEmpresa: 'ClaudiApp',
         rfc: '',
         direccion: '',
         telefono: '',
@@ -130,6 +130,19 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'contaduria-app-storage',
+      version: 1,
+      migrate: (persistedState: any) => {
+        if (persistedState?.configuracion?.nombreEmpresa === 'Mi Empresa') {
+          return {
+            ...persistedState,
+            configuracion: {
+              ...persistedState.configuracion,
+              nombreEmpresa: 'ClaudiApp'
+            }
+          };
+        }
+        return persistedState;
+      },
       partialize: (state) => ({
         darkMode: state.darkMode,
         configuracion: state.configuracion,
