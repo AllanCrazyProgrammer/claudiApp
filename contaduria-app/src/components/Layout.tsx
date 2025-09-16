@@ -8,7 +8,6 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
-  Settings,
   Moon,
   Sun,
   Warehouse

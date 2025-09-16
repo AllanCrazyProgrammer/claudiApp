@@ -80,8 +80,8 @@ export function Existencias() {
       
       // Inicializar con todos los tipos configurados
       tiposProductos.forEach(tipo => {
-        existenciasPorTipoMap.set(tipo.codigo, {
-          tipoId: tipo.codigo,
+        existenciasPorTipoMap.set(tipo.id, {
+          tipoId: tipo.id,
           tipoNombre: tipo.nombre,
           productos: [],
           totalExistencia: 0,
