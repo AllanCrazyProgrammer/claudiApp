@@ -141,7 +141,7 @@ export const salidasRepo = {
         const loteSnap = await tx.get(loteRef);
         if (!loteSnap.exists()) throw new Error(`Lote ${lote.id} no encontrado`);
         const loteActual = loteSnap.data() as any;
-        if (loteActual.cantidadDisponible < lote.cantidadDisponible) {
+        if (loteActual.cantidadDisponible < (lote as any).cantidadDisponible) {
           throw new Error('El stock ha cambiado, por favor intenta de nuevo');
         }
       }
@@ -153,7 +153,7 @@ export const salidasRepo = {
 
       for (const lote of lotes) {
         if (cantidadRestante <= 0) break;
-        const cantidadADescontar = Math.min(cantidadRestante, lote.cantidadDisponible);
+        const cantidadADescontar = Math.min(cantidadRestante, (lote as any).cantidadDisponible);
 
         salidasAProcesar.push({
           ...data,
@@ -164,7 +164,7 @@ export const salidasRepo = {
           fechaCreacion: serverTimestamp(),
         });
 
-        actualizacionesLotes.set(lote.id, lote.cantidadDisponible - cantidadADescontar);
+        actualizacionesLotes.set(lote.id, (lote as any).cantidadDisponible - cantidadADescontar);
         cantidadRestante -= cantidadADescontar;
       }
 

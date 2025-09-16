@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, TrendingDown, Calendar, Package, AlertTriangle, Trash2, ChevronDown, ChevronRight, Eye, EyeOff, Edit } from 'lucide-react';
-import { type Salida, type Producto, type Proveedor, type LoteProducto } from '@/lib/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { proveedoresRepo, type ProveedorFS } from '@/lib/repositories/proveedoresRepo';
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
@@ -20,7 +19,7 @@ interface SalidaPorDiaFS {
 
 export function Salidas() {
   const { user } = useAuth();
-  const [salidas, setSalidas] = useState<(SalidaFS & { id: string })[]>([]);
+  // const [salidas, setSalidas] = useState<(SalidaFS & { id: string })[]>([]);
   const [productos, setProductos] = useState<(ProductoFS & { id: string })[]>([]);
   const [lotesDisponibles, setLotesDisponibles] = useState<(LoteFS & { id: string })[]>([]);
   const [proveedores, setProveedores] = useState<(ProveedorFS & { id: string })[]>([]);
@@ -51,7 +50,7 @@ export function Salidas() {
         proveedoresRepo.obtenerProveedores(user.uid),
       ]);
       
-      setSalidas(salidasData);
+      // setSalidas(salidasData);
       setProductos(productosData);
       setProveedores(proveedoresData);
 
@@ -144,7 +143,7 @@ export function Salidas() {
       await salidasRepo.crearSalidaDirecta({
         productoId: lote.productoId,
         loteId: formulario.loteId,
-        fecha: createLocalDate(formulario.fecha),
+        fecha: createLocalDate(formulario.fecha) as any,
         cantidad,
         precio: lote.precioUnitario,
         numeroFactura: formulario.numeroFactura || undefined,
@@ -220,10 +219,10 @@ export function Salidas() {
     return producto?.nombre || 'Producto no encontrado';
   };
 
-  const obtenerNombreProveedor = (proveedorId: string | number) => {
-    const proveedor = proveedores.find(p => p.id === String(proveedorId));
-    return proveedor?.nombre || 'Proveedor no encontrado';
-  };
+  // const obtenerNombreProveedor = (proveedorId: string | number) => {
+  //   const proveedor = proveedores.find(p => p.id === String(proveedorId));
+  //   return proveedor?.nombre || 'Proveedor no encontrado';
+  // };
 
   const handleProveedorChange = async (proveedorId: string) => {
     setFormulario({ ...formulario, proveedorId, loteId: '', numeroFactura: '' });
@@ -232,7 +231,7 @@ export function Salidas() {
       try {
         if (!user) return;
         const lotes = await lotesRepo.obtenerLotesConExistenciaPorProveedor(user.uid, proveedorId);
-        setLotesDisponibles(lotes);
+        setLotesDisponibles(lotes as any);
       } catch (error) {
         console.error('Error al cargar lotes del proveedor:', error);
         setLotesDisponibles([]);

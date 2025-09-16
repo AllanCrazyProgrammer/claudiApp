@@ -1,5 +1,5 @@
 import { firestore } from '@/lib/firebase';
-import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
 
 export interface LoteFS {
   id?: string;

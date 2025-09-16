@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
@@ -43,7 +43,7 @@ export function Existencias() {
   const [proveedores, setProveedores] = useState<Array<{ id: string; nombre: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [tiposExpandidos, setTiposExpandidos] = useState<Record<string, boolean>>({});
-  const [productosExpandidos, setProductosExpandidos] = useState<Record<string, boolean>>({});
+  // const [productosExpandidos, setProductosExpandidos] = useState<Record<string, boolean>>({});
   const [mostrarLotes, setMostrarLotes] = useState<Record<string, boolean>>({});
 
 
@@ -130,12 +130,12 @@ export function Existencias() {
     }));
   };
 
-  const toggleProducto = (key: string) => {
-    setProductosExpandidos(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
+  // const toggleProducto = (key: string) => {
+  //   setProductosExpandidos(prev => ({
+  //     ...prev,
+  //     [key]: !prev[key]
+  //   }));
+  // };
 
   const toggleLotes = (productoId: string) => {
     setMostrarLotes(prev => ({

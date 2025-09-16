@@ -40,7 +40,7 @@ export const entradasRepo = {
       const producto = productoSnap.data() as any;
 
       // crear entrada
-      const fechaTimestamp = typeof data.fecha === 'string' ? Timestamp.fromDate(new Date(data.fecha)) : Timestamp.fromDate(data.fecha as Date);
+      const fechaTimestamp = typeof data.fecha === 'string' ? Timestamp.fromDate(new Date(data.fecha)) : Timestamp.fromDate(data.fecha as unknown as Date);
       tx.set(entradaRef, {
         productoId: data.productoId,
         proveedorId: data.proveedorId,
@@ -184,7 +184,7 @@ export const entradasRepo = {
       const fechaTimestamp = datosActualizados.fecha 
         ? (typeof datosActualizados.fecha === 'string' 
           ? Timestamp.fromDate(new Date(datosActualizados.fecha)) 
-          : Timestamp.fromDate(datosActualizados.fecha as Date))
+          : Timestamp.fromDate(datosActualizados.fecha as unknown as Date))
         : entradaOriginal.fecha;
 
       tx.update(entradaRef, {
