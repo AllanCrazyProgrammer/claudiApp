@@ -98,7 +98,13 @@ export function Entradas() {
     e.preventDefault();
     try {
       if (entradaEditando) {
-        alert('La edición de entradas aún no está habilitada en Firestore. Elimina y vuelve a crear.');
+        // Actualizar entrada existente
+        await entradasRepo.actualizarEntrada(entradaEditando.id, {
+          fecha: createLocalDate(formulario.fecha) as any,
+          cantidad: parseFloat(formulario.cantidad),
+          precio: parseFloat(formulario.precio),
+          numeroFactura: formulario.numeroFactura || undefined
+        });
       } else {
         // Crear nueva entrada
         if (!user) return;
@@ -127,12 +133,12 @@ export function Entradas() {
       `Producto: ${obtenerNombreProducto(entrada.productoId)}\n` +
       `Cantidad: ${entrada.cantidad}\n` +
       `Total: ${formatCurrency(entrada.total)}\n\n` +
-      `Esta acción no se puede deshacer.`
+      `Esta acción no se puede deshacer y recalculará automáticamente las existencias del producto.`
     );
     
     if (confirmacion) {
       try {
-        alert('Eliminar entrada no está implementado aún en Firestore UI. Puedes gestionarlo desde la consola o lo implementamos después con recálculo.');
+        await entradasRepo.eliminarEntrada(entrada.id);
         cargarDatos();
       } catch (error: any) {
         console.error('Error al eliminar entrada:', error);
@@ -148,21 +154,27 @@ export function Entradas() {
     }));
   };
 
-  const editarEntrada = (entrada: EntradaFS & { id: string }) => {
+  const editarEntrada = async (entrada: EntradaFS & { id: string }) => {
     setEntradaEditando(entrada);
     const fechaDate = (entrada.fecha as any).toDate ? (entrada.fecha as any).toDate() : new Date(entrada.fecha as any);
-    setFormulario({
+    
+    // Primero cargar productos para el proveedor seleccionado
+    await cargarProductosParaProveedor(entrada.proveedorId);
+    
+    // Luego establecer todos los datos del formulario
+    const datosFormulario = {
       productoId: entrada.productoId,
       proveedorId: entrada.proveedorId,
       fecha: fechaDate.toISOString().split('T')[0],
       cantidad: entrada.cantidad.toString(),
       precio: entrada.precio.toString(),
       numeroFactura: entrada.numeroFactura || ''
-    });
+    };
+    
+    console.log('Cargando datos de entrada para edición:', datosFormulario);
+    setFormulario(datosFormulario);
+    
     setMostrarFormulario(true);
-
-    // Cargar productos para el proveedor seleccionado
-    handleProveedorChange(entrada.proveedorId);
   };
 
   const cancelarEdicion = () => {
@@ -190,14 +202,37 @@ export function Entradas() {
     return proveedor?.nombre || 'Proveedor no encontrado';
   };
 
-  const handleProveedorChange = async (proveedorId: string) => {
-    setFormulario({ ...formulario, proveedorId, productoId: '' });
-    
+  const cargarProductosParaProveedor = async (proveedorId: string) => {
     if (proveedorId) {
       try {
-        // En la versión Firestore listamos todos y dejamos la selección libre
-        setProductosConHistorial([]);
-        setProductosDisponibles(productos);
+        // Filtrar productos por proveedor seleccionado
+        const productosDelProveedor = productos.filter(producto => 
+          producto.proveedorId === proveedorId
+        );
+        
+        // Obtener productos con historial de compras de este proveedor
+        const entradasDelProveedor = await entradasRepo.obtenerEntradas(user!.uid);
+        const productosConHistorialIds = new Set(
+          entradasDelProveedor
+            .filter(entrada => entrada.proveedorId === proveedorId)
+            .map(entrada => entrada.productoId)
+        );
+        
+        const productosConHistorial = productosDelProveedor.filter(producto =>
+          productosConHistorialIds.has(producto.id!)
+        );
+        
+        const productosDisponibles = productosDelProveedor.filter(producto =>
+          !productosConHistorialIds.has(producto.id!)
+        );
+
+        setProductosConHistorial(productosConHistorial);
+        setProductosDisponibles([...productosConHistorial, ...productosDisponibles]);
+        
+        // Si no hay productos específicos del proveedor, mostrar todos como opción
+        if (productosDelProveedor.length === 0) {
+          setProductosDisponibles(productos);
+        }
       } catch (error) {
         console.error('Error al cargar productos del proveedor:', error);
         setProductosConHistorial([]);
@@ -207,6 +242,11 @@ export function Entradas() {
       setProductosDisponibles([]);
       setProductosConHistorial([]);
     }
+  };
+
+  const handleProveedorChange = async (proveedorId: string) => {
+    setFormulario({ ...formulario, proveedorId, productoId: '' });
+    await cargarProductosParaProveedor(proveedorId);
   };
 
   if (loading) {
@@ -253,7 +293,7 @@ export function Entradas() {
             </CardTitle>
             <CardDescription>
               {entradaEditando 
-                ? 'Modifica los datos de la entrada seleccionada' 
+                ? 'Modifica fecha, cantidad, precio y número de factura. El proveedor y producto no se pueden cambiar.' 
                 : 'Registra una compra o entrada de productos al inventario'
               }
             </CardDescription>
@@ -269,7 +309,9 @@ export function Entradas() {
                     required
                     value={formulario.proveedorId}
                     onChange={(e) => handleProveedorChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      entradaEditando ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                     disabled={!!entradaEditando}
                   >
                     <option value="">Seleccionar proveedor...</option>
@@ -289,7 +331,9 @@ export function Entradas() {
                     required
                     value={formulario.productoId}
                     onChange={(e) => setFormulario({ ...formulario, productoId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      (!formulario.proveedorId || entradaEditando) ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                     disabled={!formulario.proveedorId || !!entradaEditando}
                   >
                     <option value="">
@@ -320,9 +364,12 @@ export function Entradas() {
                       </optgroup>
                     )}
                   </select>
-                  {formulario.proveedorId && productosConHistorial.length === 0 && productosDisponibles.length > 0 && (
+                  {formulario.proveedorId && productosDisponibles.length > 0 && (
                     <p className="text-sm text-blue-600 mt-1">
-                      ℹ️ Este proveedor no tiene historial de compras. Selecciona cualquier producto para crear el primer registro.
+                      {productos.filter(p => p.proveedorId === formulario.proveedorId).length > 0 
+                        ? `✓ Mostrando productos asignados a este proveedor`
+                        : `ℹ️ Este proveedor no tiene productos asignados. Mostrando todos los productos disponibles.`
+                      }
                     </p>
                   )}
                 </div>

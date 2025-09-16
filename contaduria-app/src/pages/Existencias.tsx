@@ -9,10 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
 import { lotesRepo, type LoteFS } from '@/lib/repositories/lotesRepo';
 import { proveedoresRepo } from '@/lib/repositories/proveedoresRepo';
-import { entradasRepo } from '@/lib/repositories/entradasRepo';
-import { Input } from '@/components/ui/input';
-import { firestore } from '@/lib/firebase';
-import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 
 interface ProductoConLotes extends ProductoFS {
   id: string;
@@ -49,37 +45,7 @@ export function Existencias() {
   const [tiposExpandidos, setTiposExpandidos] = useState<Record<string, boolean>>({});
   const [productosExpandidos, setProductosExpandidos] = useState<Record<string, boolean>>({});
   const [mostrarLotes, setMostrarLotes] = useState<Record<string, boolean>>({});
-  const [cantidadPrueba, setCantidadPrueba] = useState(25);
-  const [generandoPrueba, setGenerandoPrueba] = useState(false);
-  const [borrandoPrueba, setBorrandoPrueba] = useState(false);
 
-  const TEST_STORAGE_KEY = 'existencias-test-data';
-
-  const obtenerDatosPruebaGuardados = () => {
-    if (typeof window === 'undefined') {
-      return { proveedores: [] as string[], productos: [] as string[], entradas: [] as string[] };
-    }
-    try {
-      const raw = window.localStorage.getItem(TEST_STORAGE_KEY);
-      if (!raw) {
-        return { proveedores: [] as string[], productos: [] as string[], entradas: [] as string[] };
-      }
-      const parsed = JSON.parse(raw);
-      return {
-        proveedores: Array.isArray(parsed?.proveedores) ? parsed.proveedores as string[] : [],
-        productos: Array.isArray(parsed?.productos) ? parsed.productos as string[] : [],
-        entradas: Array.isArray(parsed?.entradas) ? parsed.entradas as string[] : [],
-      };
-    } catch (error) {
-      console.warn('No se pudo leer el almacenamiento de pruebas, se reiniciará.', error);
-      return { proveedores: [] as string[], productos: [] as string[], entradas: [] as string[] };
-    }
-  };
-
-  const guardarDatosPrueba = (data: { proveedores: string[]; productos: string[]; entradas: string[] }) => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(TEST_STORAGE_KEY, JSON.stringify(data));
-  };
 
   useEffect(() => {
     cargarExistencias();
@@ -178,153 +144,6 @@ export function Existencias() {
     }));
   };
 
-  const generarDatosDePrueba = async () => {
-    if (!user) {
-      alert('Debes iniciar sesión para generar datos de prueba.');
-      return;
-    }
-
-    if (!tiposProductos.length) {
-      alert('Configura al menos un tipo de producto antes de generar datos de prueba.');
-      return;
-    }
-
-    const cantidad = Number(cantidadPrueba);
-    if (!cantidad || cantidad <= 0) {
-      alert('Ingresa una cantidad válida de existencias de prueba.');
-      return;
-    }
-
-    setGenerandoPrueba(true);
-    try {
-      const batchId = Date.now();
-      const proveedoresACrear = Math.max(3, Math.round(cantidad / 10));
-      const productosACrear = Math.max(5, Math.round(cantidad / 5));
-
-      const nuevosProveedores: string[] = [];
-      for (let i = 0; i < proveedoresACrear; i++) {
-        const proveedorId = await proveedoresRepo.crearProveedor({
-          nombre: `Proveedor Prueba ${batchId}-${i + 1}`,
-          activo: true,
-          ownerUid: user.uid,
-        });
-        nuevosProveedores.push(proveedorId);
-      }
-
-      const nuevosProductos: string[] = [];
-      for (let i = 0; i < productosACrear; i++) {
-        const tipoAsignado = tiposProductos[i % tiposProductos.length]?.codigo || 'generico';
-        const productoId = await productosRepo.crearProducto({
-          nombre: `Producto Prueba ${batchId}-${i + 1}`,
-          unidadMedida: 'kg',
-          tipoCorte: tipoAsignado,
-          activo: true,
-          ownerUid: user.uid,
-        });
-        nuevosProductos.push(productoId);
-      }
-
-      if (!nuevosProductos.length || !nuevosProveedores.length) {
-        throw new Error('No se pudieron crear productos o proveedores de prueba.');
-      }
-
-      const nuevasEntradas: string[] = [];
-      for (let i = 0; i < cantidad; i++) {
-        const productoId = nuevosProductos[i % nuevosProductos.length];
-        const proveedorId = nuevosProveedores[i % nuevosProveedores.length];
-        const kilos = Number((Math.random() * 75 + 5).toFixed(2));
-        const precioUnitario = Number((Math.random() * 40 + 5).toFixed(2));
-        const diasAtras = Math.floor(Math.random() * 180);
-        const fecha = new Date(Date.now() - diasAtras * 24 * 60 * 60 * 1000);
-        const numeroFactura = `TEST-${batchId}-${i + 1}`;
-
-        const entradaId = await entradasRepo.crearEntrada({
-          productoId,
-          proveedorId,
-          fecha,
-          cantidad: kilos,
-          precio: precioUnitario,
-          numeroFactura,
-          ownerUid: user.uid,
-        } as any);
-
-        nuevasEntradas.push(entradaId);
-      }
-
-      const almacenados = obtenerDatosPruebaGuardados();
-      const combinar = (prev: string[], nuevos: string[]) => Array.from(new Set([...prev, ...nuevos]));
-      guardarDatosPrueba({
-        proveedores: combinar(almacenados.proveedores, nuevosProveedores),
-        productos: combinar(almacenados.productos, nuevosProductos),
-        entradas: combinar(almacenados.entradas, nuevasEntradas),
-      });
-
-      await cargarExistencias();
-    } catch (error) {
-      console.error('Error generando datos de prueba:', error);
-      alert('No se pudieron generar los datos de prueba. Revisa la consola para más detalles.');
-    } finally {
-      setGenerandoPrueba(false);
-    }
-  };
-
-  const borrarDatosDePrueba = async () => {
-    const almacenados = obtenerDatosPruebaGuardados();
-    const noHayDatos = !almacenados.proveedores.length && !almacenados.productos.length && !almacenados.entradas.length;
-    if (noHayDatos) {
-      alert('No hay datos de prueba guardados para eliminar.');
-      return;
-    }
-
-    const confirmar = window.confirm('¿Deseas borrar los datos de prueba generados? Esta acción es irreversible.');
-    if (!confirmar) return;
-
-    setBorrandoPrueba(true);
-    try {
-      for (const entradaId of almacenados.entradas) {
-        try {
-          const lotesSnap = await getDocs(query(collection(firestore, 'lotes'), where('entradaId', '==', entradaId)));
-          for (const loteDoc of lotesSnap.docs) {
-            await deleteDoc(loteDoc.ref);
-          }
-          await deleteDoc(doc(firestore, 'entradas', entradaId));
-        } catch (error) {
-          console.warn(`No se pudo eliminar la entrada de prueba ${entradaId}`, error);
-        }
-      }
-
-      for (const productoId of almacenados.productos) {
-        try {
-          const lotesProducto = await getDocs(query(collection(firestore, 'lotes'), where('productoId', '==', productoId)));
-          for (const loteDoc of lotesProducto.docs) {
-            await deleteDoc(loteDoc.ref);
-          }
-          await deleteDoc(doc(firestore, 'productos', productoId));
-        } catch (error) {
-          console.warn(`No se pudo eliminar el producto de prueba ${productoId}`, error);
-        }
-      }
-
-      for (const proveedorId of almacenados.proveedores) {
-        try {
-          await deleteDoc(doc(firestore, 'proveedores', proveedorId));
-        } catch (error) {
-          console.warn(`No se pudo eliminar el proveedor de prueba ${proveedorId}`, error);
-        }
-      }
-
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem(TEST_STORAGE_KEY);
-      }
-
-      await cargarExistencias();
-    } catch (error) {
-      console.error('Error al eliminar los datos de prueba:', error);
-      alert('Ocurrió un error al borrar los datos de prueba. Revisa la consola para más detalles.');
-    } finally {
-      setBorrandoPrueba(false);
-    }
-  };
 
   // Función para agrupar productos por nombre y precio
   const agruparProductosPorNombreYPrecio = (productos: ProductoConLotes[]): ProductoAgrupado[] => {
@@ -437,39 +256,6 @@ export function Existencias() {
         />
       </div>
 
-      <div className="bg-white border border-dashed rounded-lg p-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="w-full sm:w-56">
-          <label htmlFor="cantidad-prueba" className="block text-sm font-medium text-gray-600 mb-1">
-            Cantidad de lotes de prueba
-          </label>
-          <Input
-            id="cantidad-prueba"
-            type="number"
-            min={1}
-            value={cantidadPrueba}
-            onChange={(event) => setCantidadPrueba(Number(event.target.value))}
-          />
-        </div>
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
-          <Button
-            type="button"
-            onClick={generarDatosDePrueba}
-            disabled={generandoPrueba || borrandoPrueba}
-            className="w-full sm:w-auto"
-          >
-            {generandoPrueba ? 'Generando…' : 'Generar existencias de prueba'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={borrarDatosDePrueba}
-            disabled={generandoPrueba || borrandoPrueba}
-            className="w-full sm:w-auto"
-          >
-            {borrandoPrueba ? 'Borrando…' : 'Borrar datos de prueba'}
-          </Button>
-        </div>
-      </div>
 
       {/* Resumen General */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

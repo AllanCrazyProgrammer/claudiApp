@@ -56,7 +56,7 @@ export const useAppStore = create<AppState>()(
         email: ''
       },
       tiposProductos: [
-        { id: '1', nombre: 'S/C (Sin Cabeza)', codigo: 'sc' },
+        { id: '1', nombre: 'Camaron s/c Granja', codigo: 'sc' },
         { id: '2', nombre: 'C/C (Con Cabeza)', codigo: 'cc' }
       ],
 

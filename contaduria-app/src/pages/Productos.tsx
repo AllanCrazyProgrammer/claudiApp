@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Package, Edit, Trash2, Settings } from 'lucide-react';
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
 import { lotesRepo, type LoteFS } from '@/lib/repositories/lotesRepo';
+import { proveedoresRepo } from '@/lib/repositories/proveedoresRepo';
 import { formatCurrency, formatDateShort, formatNumber } from '@/lib/utils';
 import { TiposProductosModal } from '@/components/TiposProductosModal';
 import { useAppStore } from '@/stores/useAppStore';
@@ -11,8 +12,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export function Productos() {
   const { user } = useAuth();
-  const { tiposProductos } = useAppStore();
+  const { tiposProductos, setCurrentPage } = useAppStore();
   const [productos, setProductos] = useState<(ProductoFS & { id: string })[]>([]);
+  const [proveedores, setProveedores] = useState<Array<{ id: string; nombre: string }>>([]);
   const [lotes, setLotes] = useState<Record<string, (LoteFS & { id: string })[]>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -23,7 +25,8 @@ export function Productos() {
 
   const [formulario, setFormulario] = useState({
     nombre: '',
-    tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : ''
+    tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '',
+    proveedorId: ''
   });
 
   useEffect(() => {
@@ -33,8 +36,13 @@ export function Productos() {
   const cargarProductos = async () => {
     try {
       if (!user) return;
-      const productosData = await productosRepo.obtenerProductos(user.uid);
+      const [productosData, proveedoresData] = await Promise.all([
+        productosRepo.obtenerProductos(user.uid),
+        proveedoresRepo.obtenerProveedores(user.uid)
+      ]);
+      
       setProductos(productosData);
+      setProveedores(proveedoresData.map(p => ({ id: p.id!, nombre: p.nombre })));
       
       // Cargar lotes para cada producto
       const lotesData: Record<string, (LoteFS & { id: string })[]> = {};
@@ -71,7 +79,8 @@ export function Productos() {
         console.log('Actualizando producto:', productoEditando.id);
         await productosRepo.actualizarProducto(productoEditando.id!, { 
           nombre: formulario.nombre.trim(), 
-          tipoCorte: formulario.tipoCorte 
+          tipoCorte: formulario.tipoCorte,
+          proveedorId: formulario.proveedorId || undefined
         });
         alert('Producto actualizado exitosamente');
       } else {
@@ -89,7 +98,8 @@ export function Productos() {
         const productoId = await productosRepo.crearProducto({ 
           nombre: formulario.nombre.trim(), 
           unidadMedida: 'kg', 
-          tipoCorte: formulario.tipoCorte || 'default', 
+          tipoCorte: formulario.tipoCorte || 'default',
+          proveedorId: formulario.proveedorId || undefined,
           activo: true, 
           ownerUid: user.uid 
         });
@@ -99,7 +109,8 @@ export function Productos() {
       
       setFormulario({ 
         nombre: '', 
-        tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '' 
+        tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '',
+        proveedorId: ''
       });
       setMostrarFormulario(false);
       setProductoEditando(null);
@@ -116,7 +127,8 @@ export function Productos() {
     setProductoEditando(producto);
     setFormulario({
       nombre: producto.nombre,
-      tipoCorte: producto.tipoCorte || (tiposProductos.length > 0 ? tiposProductos[0].codigo : '')
+      tipoCorte: producto.tipoCorte || (tiposProductos.length > 0 ? tiposProductos[0].codigo : ''),
+      proveedorId: producto.proveedorId || ''
     });
     setMostrarFormulario(true);
   };
@@ -124,7 +136,8 @@ export function Productos() {
   const cancelarEdicion = () => {
     setFormulario({ 
       nombre: '', 
-      tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '' 
+      tipoCorte: tiposProductos.length > 0 ? tiposProductos[0].codigo : '',
+      proveedorId: ''
     });
     setMostrarFormulario(false);
     setProductoEditando(null);
@@ -151,6 +164,12 @@ export function Productos() {
       ...prev,
       [productoId]: !prev[productoId]
     }));
+  };
+
+  const obtenerNombreProveedor = (proveedorId?: string) => {
+    if (!proveedorId) return 'Sin proveedor asignado';
+    const proveedor = proveedores.find(p => p.id === proveedorId);
+    return proveedor?.nombre || 'Proveedor no encontrado';
   };
 
   if (loading) {
@@ -252,6 +271,38 @@ export function Productos() {
                     </p>
                   )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Proveedor Principal
+                  </label>
+                  <select
+                    value={formulario.proveedorId}
+                    onChange={(e) => setFormulario({ ...formulario, proveedorId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Sin proveedor asignado</option>
+                    {proveedores.map((proveedor) => (
+                      <option key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Opcional: Asigna un proveedor principal para filtrar en entradas/salidas
+                    {proveedores.length === 0 && (
+                      <span className="block text-amber-600 font-medium mt-1">
+                        ⚠️ No hay proveedores registrados. <button 
+                          type="button" 
+                          onClick={() => setCurrentPage('proveedores')} 
+                          className="underline hover:text-amber-700"
+                        >
+                          Crear uno aquí
+                        </button>
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
 
               <div className="flex gap-2">
@@ -288,6 +339,7 @@ export function Productos() {
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Producto</th>
                     <th className="text-left py-3 px-4">Tipo</th>
+                    <th className="text-left py-3 px-4">Proveedor</th>
                     <th className="text-left py-3 px-4">Existencia Total</th>
                     <th className="text-left py-3 px-4">Precio Promedio</th>
                     <th className="text-left py-3 px-4">Valor Total</th>
@@ -305,6 +357,11 @@ export function Productos() {
                         <td className="py-3 px-4">
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                             {tiposProductos.find(tipo => tipo.codigo === producto.tipoCorte)?.nombre || producto.tipoCorte}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-sm text-gray-600">
+                            {obtenerNombreProveedor(producto.proveedorId)}
                           </span>
                         </td>
                         <td className="py-3 px-4">
