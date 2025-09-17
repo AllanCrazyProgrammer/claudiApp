@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { FraseDelDia } from "../components/FraseDelDia";
 import { useAppStore } from "../stores/useAppStore";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Seccion {
   id: string;
@@ -31,9 +32,21 @@ interface Seccion {
 
 export function Dashboard() {
   const { setCurrentPage } = useAppStore();
+  const { user } = useAuth();
   const [scrollY, setScrollY] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Función para obtener el saludo personalizado
+  const obtenerSaludo = () => {
+    if (user?.email === 'cturrubiates@hotmail.com') {
+      return '¡Hola Claudia!';
+    }
+    if (user?.email === 'allanestuardoreyes@gmail.com') {
+      return '¡Hola Brenda!';
+    }
+    return '¡Hola Allan!';
+  };
 
   useEffect(() => {
     // Efecto parallax
@@ -199,14 +212,14 @@ export function Dashboard() {
               </div>
 
               <h1 className="text-7xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 animate-pulse">
-                ¡Hola Brenda y Claudia!
+                {obtenerSaludo()}
               </h1>
 
               <p
                 className="text-2xl text-gray-700 mb-4 animate-fade-in-up"
                 style={{ animationDelay: "0.5s" }}
               >
-                Bienvenidas a su Sistema de Inventario Inteligente
+                Bienvenida a tu Sistema de Inventario Inteligente
               </p>
 
               <div
