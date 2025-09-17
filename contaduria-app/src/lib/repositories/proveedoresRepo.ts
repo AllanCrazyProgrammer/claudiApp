@@ -1,5 +1,5 @@
 import { firestore } from '@/lib/firebase';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, writeBatch, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 
 export interface ProveedorFS {
   id?: string;

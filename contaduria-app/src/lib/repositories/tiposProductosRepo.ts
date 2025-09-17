@@ -1,5 +1,5 @@
 import { firestore } from '@/lib/firebase';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc } from 'firebase/firestore';
 
 export interface TipoProductoFS {
   id?: string;

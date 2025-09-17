@@ -210,7 +210,7 @@ export function Entradas() {
         );
         
         // Obtener productos con historial de compras de este proveedor
-        const entradasDelProveedor = await entradasRepo.obtenerEntradas(user!.uid);
+        const entradasDelProveedor = await entradasRepo.obtenerEntradas();
         const productosConHistorialIds = new Set(
           entradasDelProveedor
             .filter(entrada => entrada.proveedorId === proveedorId)

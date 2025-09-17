@@ -44,7 +44,6 @@ export const salidasRepo = {
     // Primero obtenemos los lotes fuera de la transacción
     const lotesQ = query(
       collection(firestore, LOTES),
-      where('ownerUid', '==', data.ownerUid),
       where('productoId', '==', data.productoId)
     );
     const lotesSnapshot = await getDocs(lotesQ);

@@ -229,7 +229,7 @@ export function Salidas() {
     if (proveedorId) {
       try {
         if (!user) return;
-        const lotes = await lotesRepo.obtenerLotesConExistenciaPorProveedor(user.uid, proveedorId);
+        const lotes = await lotesRepo.obtenerLotesConExistenciaPorProveedor(proveedorId);
         setLotesDisponibles(lotes as any);
       } catch (error) {
         console.error('Error al cargar lotes del proveedor:', error);
