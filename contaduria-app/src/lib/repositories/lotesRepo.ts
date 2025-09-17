@@ -18,9 +18,10 @@ export interface LoteFS {
 const COLLECTION_NAME = 'lotes';
 
 export const lotesRepo = {
-  async crearLote(data: Omit<LoteFS, 'id' | 'fechaCreacion'>) {
+  async crearLote(data: Omit<LoteFS, 'id' | 'fechaCreacion' | 'ownerUid'>) {
     const ref = await addDoc(collection(firestore, COLLECTION_NAME), {
       ...data,
+      ownerUid: 'shared', // Todos los lotes son compartidos
       fechaCreacion: serverTimestamp(),
     });
     return ref.id;
@@ -30,12 +31,10 @@ export const lotesRepo = {
     await updateDoc(doc(firestore, COLLECTION_NAME, id), data);
   },
 
-  async obtenerLotesPorProducto(ownerUid: string, productoId: string) {
-    // Evitar índices compuestos: solo filtramos por ownerUid y productoId en Firestore
-    // y hacemos filtro/sort en el cliente
+  async obtenerLotesPorProducto(productoId: string) {
+    // Obtener todos los lotes del producto (sin filtrar por ownerUid)
     const q = query(
       collection(firestore, COLLECTION_NAME),
-      where('ownerUid', '==', ownerUid),
       where('productoId', '==', productoId)
     );
     const snap = await getDocs(q);
@@ -45,11 +44,10 @@ export const lotesRepo = {
       .sort((a, b) => (a.fecha as any).toMillis?.() - (b.fecha as any).toMillis?.());
   },
 
-  async obtenerLotesConExistenciaPorProveedor(ownerUid: string, proveedorId: string) {
-    // Evitar índices: filtrar por ownerUid y proveedorId en Firestore, resto en cliente
+  async obtenerLotesConExistenciaPorProveedor(proveedorId: string) {
+    // Obtener todos los lotes del proveedor (sin filtrar por ownerUid)
     const q = query(
       collection(firestore, COLLECTION_NAME),
-      where('ownerUid', '==', ownerUid),
       where('proveedorId', '==', proveedorId)
     );
     const snap = await getDocs(q);

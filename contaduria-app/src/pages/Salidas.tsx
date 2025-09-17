@@ -45,9 +45,9 @@ export function Salidas() {
     try {
       if (!user) return;
       const [salidasData, productosData, proveedoresData] = await Promise.all([
-        salidasRepo.obtenerSalidas(user.uid),
-        productosRepo.obtenerProductos(user.uid),
-        proveedoresRepo.obtenerProveedores(user.uid),
+        salidasRepo.obtenerSalidas(),
+        productosRepo.obtenerProductos(),
+        proveedoresRepo.obtenerProveedores(),
       ]);
       
       // setSalidas(salidasData);
@@ -147,8 +147,7 @@ export function Salidas() {
         cantidad,
         precio: lote.precioUnitario,
         numeroFactura: formulario.numeroFactura || undefined,
-        motivo: 'venta',
-        ownerUid: user.uid,
+        motivo: 'venta'
       });
       
       alert('Salida registrada exitosamente');

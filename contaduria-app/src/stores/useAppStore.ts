@@ -26,8 +26,8 @@ interface AppState {
   setCurrentPage: (page: string) => void;
   
   // Tipos de Productos Actions
-  cargarTiposProductos: (ownerUid: string) => Promise<void>;
-  agregarTipoProducto: (nombre: string, ownerUid: string) => Promise<void>;
+  cargarTiposProductos: () => Promise<void>;
+  agregarTipoProducto: (nombre: string) => Promise<void>;
   eliminarTipoProducto: (id: string) => Promise<void>;
   actualizarTipoProducto: (id: string, nombre: string) => Promise<void>;
 }
@@ -66,9 +66,9 @@ export const useAppStore = create<AppState>()(
       setCurrentPage: (page) => set({ currentPage: page }),
       
       // Tipos de Productos Actions
-      cargarTiposProductos: async (ownerUid: string) => {
+      cargarTiposProductos: async () => {
         try {
-          const tiposData = await tiposProductosRepo.obtenerTiposProductos(ownerUid);
+          const tiposData = await tiposProductosRepo.obtenerTiposProductos();
           const tipos = tiposData.map(tipo => ({
             id: tipo.id!,
             nombre: tipo.nombre
@@ -80,12 +80,11 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      agregarTipoProducto: async (nombre: string, ownerUid: string) => {
+      agregarTipoProducto: async (nombre: string) => {
         try {
           const id = await tiposProductosRepo.crearTipoProducto({
             nombre,
-            activo: true,
-            ownerUid
+            activo: true
           });
           
           set((state) => ({

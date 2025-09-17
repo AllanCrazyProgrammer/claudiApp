@@ -12,18 +12,18 @@ export interface TipoProductoFS {
 const COLLECTION_NAME = 'tiposProductos';
 
 export const tiposProductosRepo = {
-  async crearTipoProducto(data: Omit<TipoProductoFS, 'id' | 'fechaCreacion'>) {
+  async crearTipoProducto(data: Omit<TipoProductoFS, 'id' | 'fechaCreacion' | 'ownerUid'>) {
     const ref = await addDoc(collection(firestore, COLLECTION_NAME), {
       ...data,
+      ownerUid: 'shared', // Todos los tipos son compartidos
       fechaCreacion: serverTimestamp(),
     });
     return ref.id;
   },
 
-  async obtenerTiposProductos(ownerUid: string) {
+  async obtenerTiposProductos() {
     const q = query(
-      collection(firestore, COLLECTION_NAME),
-      where('ownerUid', '==', ownerUid)
+      collection(firestore, COLLECTION_NAME)
     );
     const snap = await getDocs(q);
     return snap.docs

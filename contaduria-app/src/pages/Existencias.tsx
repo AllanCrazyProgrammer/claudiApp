@@ -55,8 +55,8 @@ export function Existencias() {
     try {
       if (!user) return;
       const [productosAll, proveedoresData] = await Promise.all([
-        productosRepo.obtenerProductos(user.uid),
-        proveedoresRepo.obtenerProveedores(user.uid)
+        productosRepo.obtenerProductos(),
+        proveedoresRepo.obtenerProveedores()
       ]);
 
       setProveedores(proveedoresData.map(p => ({ id: p.id!, nombre: p.nombre })));
@@ -67,7 +67,7 @@ export function Existencias() {
       // Cargar lotes para cada producto
       const productosConLotes: ProductoConLotes[] = [];
       for (const producto of productos) {
-        const lotes = await lotesRepo.obtenerLotesPorProducto(user.uid, producto.id!);
+        const lotes = await lotesRepo.obtenerLotesPorProducto(producto.id!);
         productosConLotes.push({
           ...(producto as any),
           lotes: lotes as any,

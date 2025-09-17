@@ -20,7 +20,7 @@ const PRODUCTOS = 'productos';
 const SALIDAS = 'salidas';
 
 export const entradasRepo = {
-  async crearEntrada(data: Omit<EntradaFS, 'id' | 'fechaCreacion' | 'total'>) {
+  async crearEntrada(data: Omit<EntradaFS, 'id' | 'fechaCreacion' | 'total' | 'ownerUid'>) {
     // total calculado
     const total = data.cantidad * data.precio;
 
@@ -50,7 +50,7 @@ export const entradasRepo = {
         total,
         numeroFactura: data.numeroFactura ?? null,
         fechaCreacion: serverTimestamp(),
-        ownerUid: data.ownerUid,
+        ownerUid: 'shared', // Todas las entradas son compartidas
       });
 
       // crear lote
@@ -64,7 +64,7 @@ export const entradasRepo = {
         precioUnitario: data.precio,
         numeroFactura: data.numeroFactura ?? null,
         fechaCreacion: serverTimestamp(),
-        ownerUid: data.ownerUid,
+        ownerUid: 'shared', // Todos los lotes son compartidos
       });
 
       // actualizar producto (existencia y promedio ponderado)
@@ -84,16 +84,15 @@ export const entradasRepo = {
     });
   },
 
-  async obtenerEntradas(ownerUid: string) {
-    // Evitar índice compuesto: ordenar por fechaCreacion y filtrar owner en cliente
+  async obtenerEntradas() {
+    // Obtener todas las entradas compartidas (sin filtrar por ownerUid)
     const q = query(
       collection(firestore, ENTRADAS),
       orderBy('fechaCreacion', 'desc')
     );
     const snap = await getDocs(q);
     return snap.docs
-      .map(d => ({ id: d.id, ...(d.data() as any) }))
-      .filter((e: any) => e.ownerUid === ownerUid) as EntradaFS[];
+      .map(d => ({ id: d.id, ...(d.data() as any) })) as EntradaFS[];
   },
 
   async eliminarEntrada(entradaId: string) {

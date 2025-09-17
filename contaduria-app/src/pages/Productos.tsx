@@ -46,7 +46,7 @@ export function Productos() {
       try {
         // Cargar tipos de productos y productos en paralelo
         await Promise.all([
-          cargarTiposProductos(user.uid),
+          cargarTiposProductos(),
           cargarProductos()
         ]);
       } catch (error) {
@@ -61,8 +61,8 @@ export function Productos() {
     try {
       if (!user) return;
       const [productosData, proveedoresData] = await Promise.all([
-        productosRepo.obtenerProductos(user.uid),
-        proveedoresRepo.obtenerProveedores(user.uid)
+        productosRepo.obtenerProductos(),
+        proveedoresRepo.obtenerProveedores()
       ]);
       
       setProductos(productosData);
@@ -71,7 +71,7 @@ export function Productos() {
       // Cargar lotes para cada producto
       const lotesData: Record<string, (LoteFS & { id: string })[]> = {};
       for (const producto of productosData) {
-        const lotesProducto = await lotesRepo.obtenerLotesPorProducto(user.uid, producto.id!);
+        const lotesProducto = await lotesRepo.obtenerLotesPorProducto(producto.id!);
         lotesData[producto.id!] = lotesProducto as any;
       }
       setLotes(lotesData);
@@ -124,8 +124,7 @@ export function Productos() {
           unidadMedida: 'kg', 
           tipoCorte: formulario.tipoCorte || 'default',
           proveedorId: formulario.proveedorId || undefined,
-          activo: true, 
-          ownerUid: user.uid 
+          activo: true
         });
         console.log('Producto creado con ID:', productoId);
         alert('Producto creado exitosamente');

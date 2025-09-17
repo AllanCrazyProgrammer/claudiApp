@@ -45,9 +45,9 @@ export function Entradas() {
     try {
       if (!user) return;
       const [entradasData, productosData, proveedoresData] = await Promise.all([
-        entradasRepo.obtenerEntradas(user.uid),
-        productosRepo.obtenerProductos(user.uid),
-        proveedoresRepo.obtenerProveedores(user.uid)
+        entradasRepo.obtenerEntradas(),
+        productosRepo.obtenerProductos(),
+        proveedoresRepo.obtenerProveedores()
       ]);
       
       setProductos(productosData);
@@ -114,8 +114,7 @@ export function Entradas() {
           fecha: createLocalDate(formulario.fecha) as any,
           cantidad: parseFloat(formulario.cantidad),
           precio: parseFloat(formulario.precio),
-          numeroFactura: formulario.numeroFactura || undefined,
-          ownerUid: user.uid
+          numeroFactura: formulario.numeroFactura || undefined
         });
       }
       

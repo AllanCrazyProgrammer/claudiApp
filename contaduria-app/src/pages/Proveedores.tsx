@@ -23,7 +23,7 @@ export function Proveedores() {
   const cargarProveedores = async () => {
     try {
       if (!user) return;
-      const proveedoresData = await proveedoresRepo.obtenerProveedores(user.uid);
+      const proveedoresData = await proveedoresRepo.obtenerProveedores();
       setProveedores(proveedoresData);
     } catch (error) {
       console.error('Error al cargar proveedores:', error);
@@ -41,7 +41,7 @@ export function Proveedores() {
       } else {
         // Crear nuevo proveedor
         if (!user) return;
-        await proveedoresRepo.crearProveedor({ nombre: formulario.nombre, activo: true, ownerUid: user.uid });
+        await proveedoresRepo.crearProveedor({ nombre: formulario.nombre, activo: true });
       }
       
       setFormulario({ nombre: '' });

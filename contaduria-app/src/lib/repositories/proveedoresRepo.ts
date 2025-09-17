@@ -16,18 +16,18 @@ export interface ProveedorFS {
 const COLLECTION_NAME = 'proveedores';
 
 export const proveedoresRepo = {
-  async crearProveedor(data: Omit<ProveedorFS, 'id' | 'fechaCreacion'>) {
+  async crearProveedor(data: Omit<ProveedorFS, 'id' | 'fechaCreacion' | 'ownerUid'>) {
     const ref = await addDoc(collection(firestore, COLLECTION_NAME), {
       ...data,
+      ownerUid: 'shared', // Todos los proveedores son compartidos
       fechaCreacion: serverTimestamp(),
     });
     return ref.id;
   },
 
-  async obtenerProveedores(ownerUid: string) {
+  async obtenerProveedores() {
     const q = query(
-      collection(firestore, COLLECTION_NAME),
-      where('ownerUid', '==', ownerUid)
+      collection(firestore, COLLECTION_NAME)
     );
     const snap = await getDocs(q);
     return snap.docs

@@ -49,7 +49,7 @@ export function TiposProductosModal({ isOpen, onClose }: TiposProductosModalProp
         await actualizarTipoProducto(editando, formulario.nombre);
         alert('Tipo de producto actualizado exitosamente');
       } else {
-        await agregarTipoProducto(formulario.nombre, user.uid);
+        await agregarTipoProducto(formulario.nombre);
         alert('Tipo de producto creado exitosamente');
       }
 

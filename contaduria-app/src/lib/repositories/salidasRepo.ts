@@ -21,7 +21,7 @@ const PRODUCTOS = 'productos';
 
 export const salidasRepo = {
   // Crea una salida simple contra un lote específico
-  async crearSalidaDirecta(data: Omit<SalidaFS, 'id' | 'fechaCreacion' | 'total'> & { fecha: Date; loteId: string }) {
+  async crearSalidaDirecta(data: Omit<SalidaFS, 'id' | 'fechaCreacion' | 'total' | 'ownerUid'> & { fecha: Date; loteId: string }) {
     // Validación de datos requeridos
     if (!data.loteId || data.loteId.trim() === '') {
       throw new Error('Debe seleccionar un lote específico para realizar la salida');
@@ -80,6 +80,7 @@ export const salidasRepo = {
         ...data,
         fecha: Timestamp.fromDate(data.fecha),
         total,
+        ownerUid: 'shared', // Todas las salidas son compartidas
         fechaCreacion: serverTimestamp(),
       });
 
@@ -97,7 +98,7 @@ export const salidasRepo = {
   },
 
   // FIFO: divide en múltiples salidas contra varios lotes en orden por fecha
-  async crearSalidaFIFO(data: Omit<SalidaFS, 'id' | 'fechaCreacion' | 'total' | 'loteId'> & { fecha: Date }) {
+  async crearSalidaFIFO(data: Omit<SalidaFS, 'id' | 'fechaCreacion' | 'total' | 'loteId' | 'ownerUid'> & { fecha: Date }) {
     // Validación de datos requeridos
     if (!data.productoId || data.productoId.trim() === '') {
       throw new Error('El producto es requerido');
@@ -114,7 +115,6 @@ export const salidasRepo = {
     // Primero obtenemos los lotes fuera de la transacción
     const lotesQ = query(
       collection(firestore, LOTES),
-      where('ownerUid', '==', data.ownerUid),
       where('productoId', '==', data.productoId)
     );
     const lotesSnapshot = await getDocs(lotesQ);
@@ -161,6 +161,7 @@ export const salidasRepo = {
           cantidad: cantidadADescontar,
           fecha: Timestamp.fromDate(data.fecha),
           total: cantidadADescontar * data.precio,
+          ownerUid: 'shared', // Todas las salidas son compartidas
           fechaCreacion: serverTimestamp(),
         });
 
@@ -204,16 +205,15 @@ export const salidasRepo = {
     });
   },
 
-  async obtenerSalidas(ownerUid: string) {
-    // Evitar índice compuesto: ordenar por fechaCreacion y filtrar owner en cliente
+  async obtenerSalidas() {
+    // Obtener todas las salidas compartidas (sin filtrar por ownerUid)
     const q = query(
       collection(firestore, SALIDAS),
       orderBy('fechaCreacion', 'desc')
     );
     const snap = await getDocs(q);
     return snap.docs
-      .map(d => ({ id: d.id, ...(d.data() as any) }))
-      .filter((s: any) => s.ownerUid === ownerUid) as SalidaFS[];
+      .map(d => ({ id: d.id, ...(d.data() as any) })) as SalidaFS[];
   },
 
   async eliminarSalida(salidaId: string) {

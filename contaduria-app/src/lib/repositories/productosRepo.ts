@@ -18,22 +18,21 @@ export interface ProductoFS {
 const COLLECTION_NAME = 'productos';
 
 export const productosRepo = {
-  async crearProducto(data: Omit<ProductoFS, 'id' | 'fechaCreacion' | 'existenciaActual' | 'precioPromedio'>) {
+  async crearProducto(data: Omit<ProductoFS, 'id' | 'fechaCreacion' | 'existenciaActual' | 'precioPromedio' | 'ownerUid'>) {
     const ref = await addDoc(collection(firestore, COLLECTION_NAME), {
       ...data,
       existenciaActual: 0,
       precioPromedio: 0,
+      ownerUid: 'shared', // Todos los productos son compartidos
       fechaCreacion: serverTimestamp(),
     });
     return ref.id;
   },
 
-  async obtenerProductos(ownerUid: string) {
-    // Para evitar cualquier índice compuesto, solo filtramos por ownerUid
-    // y hacemos el orden/filtrado restante en el cliente.
+  async obtenerProductos() {
+    // Obtener todos los productos compartidos (sin filtrar por ownerUid)
     const q = query(
-      collection(firestore, COLLECTION_NAME),
-      where('ownerUid', '==', ownerUid)
+      collection(firestore, COLLECTION_NAME)
     );
     const snap = await getDocs(q);
     return snap.docs
