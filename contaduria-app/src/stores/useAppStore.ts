@@ -50,12 +50,8 @@ export const useAppStore = create<AppState>()(
       
       setDarkMode: (dark) => {
         set({ darkMode: dark });
-        // Aplicar clase dark al documento
-        if (dark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        // La aplicación del dark mode se maneja ahora en el hook useDarkMode
+        // para evitar manipulaciones directas del DOM que pueden causar errores
       },
       
       toggleDarkMode: () => {

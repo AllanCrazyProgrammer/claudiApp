@@ -27,14 +27,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const allowedSnap = await getDoc(doc(firestore, 'allowedUsers', firebaseUser.uid));
           if (!allowedSnap.exists()) {
-            window.alert('Acceso restringido. Contacta al administrador.');
+            // Usar setTimeout para evitar problemas de renderizado
+            setTimeout(() => {
+              if (typeof window !== 'undefined') {
+                window.alert('Acceso restringido. Contacta al administrador.');
+              }
+            }, 100);
             await signOut(auth);
             setUser(null);
           }
         } catch (err) {
           // Si no podemos leer allowedUsers (por reglas), negar acceso por seguridad
           console.error('Error verificando allowedUsers:', err);
-          window.alert('Acceso restringido. Contacta al administrador.');
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.alert('Acceso restringido. Contacta al administrador.');
+            }
+          }, 100);
           await signOut(auth);
           setUser(null);
         }

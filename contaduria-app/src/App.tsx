@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { Dashboard } from '@/pages/Dashboard';
 import { Productos } from '@/pages/Productos';
@@ -8,20 +7,16 @@ import { Existencias } from '@/pages/Existencias';
 import { Salidas } from '@/pages/Salidas';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDarkMode } from '@/hooks/useDarkMode';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Login } from '@/pages/Login';
 
 function App() {
   const { currentPage, darkMode } = useAppStore();
   const { user, loading } = useAuth();
-
-  // Aplicar tema oscuro al cargar
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+  
+  // Usar el hook personalizado para manejar el dark mode de manera segura
+  useDarkMode(darkMode);
 
   if (loading) {
     return <div className="p-6 text-center">Cargando...</div>;
@@ -51,9 +46,11 @@ function App() {
   };
 
   return (
-    <Layout>
-      {renderCurrentPage()}
-    </Layout>
+    <ErrorBoundary>
+      <Layout>
+        {renderCurrentPage()}
+      </Layout>
+    </ErrorBoundary>
   );
 }
 
