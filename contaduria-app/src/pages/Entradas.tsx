@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { proveedoresRepo, type ProveedorFS } from '@/lib/repositories/proveedoresRepo';
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
 import { entradasRepo, type EntradaFS } from '@/lib/repositories/entradasRepo';
-import { formatCurrency, formatDateShort, createLocalDate, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatDateShort, createLocalDate, formatNumber, calcularTotal, formatCurrencyPrecise } from '@/lib/utils';
 
 interface EntradaPorDiaFS {
   fecha: string;
@@ -449,7 +449,7 @@ export function Entradas() {
               {formulario.cantidad && formulario.precio && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-sm text-blue-800">
-                    <strong>Total: {formatCurrency(parseFloat(formulario.cantidad) * parseFloat(formulario.precio))}</strong>
+                    <strong>Total: {formatCurrencyPrecise(calcularTotal(formulario.cantidad, formulario.precio))}</strong>
                   </div>
                 </div>
               )}

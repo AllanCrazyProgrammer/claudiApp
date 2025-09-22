@@ -47,3 +47,29 @@ export function formatNumber(number: number, decimals: number = 0): string {
     maximumFractionDigits: decimals
   }).format(number);
 }
+
+// Función para calcular totales con máxima precisión decimal
+export function calcularTotal(cantidad: string | number, precio: string | number): number {
+  // Convertir a números manteniendo la precisión
+  const cantidadNum = typeof cantidad === 'string' ? parseFloat(cantidad) : cantidad;
+  const precioNum = typeof precio === 'string' ? parseFloat(precio) : precio;
+  
+  // Si algún valor es inválido, retornar 0
+  if (isNaN(cantidadNum) || isNaN(precioNum)) return 0;
+  
+  // Usar multiplicación directa para mantener precisión
+  return cantidadNum * precioNum;
+}
+
+// Función para formatear moneda con más decimales cuando sea necesario
+export function formatCurrencyPrecise(amount: number): string {
+  // Determinar cuántos decimales mostrar basado en el valor
+  const decimals = amount % 1 === 0 ? 2 : Math.max(2, amount.toString().split('.')[1]?.length || 2);
+  
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: Math.min(decimals, 6) // Máximo 6 decimales para evitar números muy largos
+  }).format(amount);
+}

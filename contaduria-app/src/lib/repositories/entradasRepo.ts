@@ -1,5 +1,6 @@
 import { firestore } from '@/lib/firebase';
 import { collection, doc, getDoc, getDocs, orderBy, query, runTransaction, serverTimestamp, Timestamp, where } from 'firebase/firestore';
+import { calcularTotal } from '@/lib/utils';
 
 export interface EntradaFS {
   id?: string;
@@ -21,8 +22,8 @@ const SALIDAS = 'salidas';
 
 export const entradasRepo = {
   async crearEntrada(data: Omit<EntradaFS, 'id' | 'fechaCreacion' | 'total' | 'ownerUid'>) {
-    // total calculado
-    const total = data.cantidad * data.precio;
+    // total calculado con precisión
+    const total = calcularTotal(data.cantidad, data.precio);
 
     return await runTransaction(firestore, async (tx) => {
       // refs
@@ -170,7 +171,7 @@ export const entradasRepo = {
     // Calcular nuevo total si se actualizaron cantidad o precio
     const nuevaCantidad = datosActualizados.cantidad ?? entradaOriginal.cantidad;
     const nuevoPrecio = datosActualizados.precio ?? entradaOriginal.precio;
-    const nuevoTotal = nuevaCantidad * nuevoPrecio;
+    const nuevoTotal = calcularTotal(nuevaCantidad, nuevoPrecio);
 
     // Verificar si hay salidas del lote antes de permitir cambios que afecten la cantidad
     if (datosActualizados.cantidad && datosActualizados.cantidad !== entradaOriginal.cantidad) {

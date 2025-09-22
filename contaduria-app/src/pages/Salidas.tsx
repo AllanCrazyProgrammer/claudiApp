@@ -7,7 +7,7 @@ import { proveedoresRepo, type ProveedorFS } from '@/lib/repositories/proveedore
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
 import { lotesRepo, type LoteFS } from '@/lib/repositories/lotesRepo';
 import { salidasRepo, type SalidaFS } from '@/lib/repositories/salidasRepo';
-import { formatCurrency, formatDateShort, createLocalDate, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatDateShort, createLocalDate, formatNumber, calcularTotal, formatCurrencyPrecise } from '@/lib/utils';
 
 interface SalidaPorDiaFS {
   fecha: string;
@@ -469,7 +469,7 @@ export function Salidas() {
                     </div>
                     <hr className="my-2 border-green-200" />
                     <div className="text-lg font-bold text-center">
-                      Total: {formatCurrency(parseFloat(formulario.cantidad) * loteSeleccionado.precioUnitario)}
+                      Total: {formatCurrencyPrecise(calcularTotal(formulario.cantidad, loteSeleccionado.precioUnitario))}
                     </div>
                   </div>
                 </div>

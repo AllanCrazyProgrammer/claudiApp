@@ -1,5 +1,6 @@
 import { firestore } from '@/lib/firebase';
 import { collection, doc, getDoc, getDocs, orderBy, query, runTransaction, serverTimestamp, Timestamp, where } from 'firebase/firestore';
+import { calcularTotal } from '@/lib/utils';
 
 export interface SalidaFS {
   id?: string;
@@ -39,7 +40,7 @@ export const salidasRepo = {
       throw new Error('El precio no puede ser negativo');
     }
     
-    const total = data.cantidad * data.precio;
+    const total = calcularTotal(data.cantidad, data.precio);
 
     // Primero obtenemos los lotes fuera de la transacción
     const lotesQ = query(
