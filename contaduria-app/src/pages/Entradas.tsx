@@ -127,18 +127,32 @@ export function Entradas() {
   };
 
   const eliminarEntrada = async (entrada: EntradaFS & { id: string }) => {
-    const confirmacion = window.confirm(
-      `¿Estás seguro de que deseas eliminar esta entrada?\n\n` +
-      `Producto: ${obtenerNombreProducto(entrada.productoId)}\n` +
-      `Cantidad: ${entrada.cantidad}\n` +
-      `Total: ${formatCurrency(entrada.total)}\n\n` +
-      `Esta acción no se puede deshacer y recalculará automáticamente las existencias del producto.`
-    );
+    const nombreProducto = obtenerNombreProducto(entrada.productoId);
+    const esProductoNoEncontrado = nombreProducto === 'Producto no encontrado';
+    
+    const mensaje = esProductoNoEncontrado
+      ? `¿Estás seguro de que deseas eliminar esta entrada?\n\n` +
+        `Producto: ${nombreProducto}\n` +
+        `Cantidad: ${entrada.cantidad}\n` +
+        `Total: ${formatCurrency(entrada.total)}\n\n` +
+        `Nota: El producto asociado ya no existe en el sistema.\n` +
+        `Esta acción eliminará la entrada huérfana y no afectará las existencias.`
+      : `¿Estás seguro de que deseas eliminar esta entrada?\n\n` +
+        `Producto: ${nombreProducto}\n` +
+        `Cantidad: ${entrada.cantidad}\n` +
+        `Total: ${formatCurrency(entrada.total)}\n\n` +
+        `Esta acción no se puede deshacer y recalculará automáticamente las existencias del producto.`;
+    
+    const confirmacion = window.confirm(mensaje);
     
     if (confirmacion) {
       try {
         await entradasRepo.eliminarEntrada(entrada.id);
         cargarDatos();
+        
+        if (esProductoNoEncontrado) {
+          alert('Entrada huérfana eliminada exitosamente.');
+        }
       } catch (error: any) {
         console.error('Error al eliminar entrada:', error);
         alert(error.message || 'Error al eliminar la entrada. Inténtalo de nuevo.');

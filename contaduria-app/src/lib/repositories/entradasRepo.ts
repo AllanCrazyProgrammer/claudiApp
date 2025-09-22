@@ -130,15 +130,24 @@ export const entradasRepo = {
 
     // Ahora ejecutamos la transacción con los datos obtenidos
     return await runTransaction(firestore, async (tx) => {
+      // PRIMERO: Todas las lecturas (verificar si el producto existe)
+      const productoRef = doc(firestore, PRODUCTOS, entrada.productoId);
+      const productoSnap = await tx.get(productoRef);
+      
+      // DESPUÉS: Todas las escrituras
       // eliminar lote y entrada
       tx.delete(doc(firestore, LOTES, loteId));
       tx.delete(entradaRef);
 
-      // actualizar producto
-      tx.update(doc(firestore, PRODUCTOS, entrada.productoId), {
-        existenciaActual: existenciaTotal,
-        precioPromedio: nuevoPrecioPromedio,
-      });
+      if (productoSnap.exists()) {
+        // actualizar producto solo si existe
+        tx.update(productoRef, {
+          existenciaActual: existenciaTotal,
+          precioPromedio: nuevoPrecioPromedio,
+        });
+      }
+      // Si el producto no existe, solo eliminamos la entrada y el lote
+      // sin intentar actualizar las existencias
 
       return true;
     });
