@@ -48,6 +48,19 @@ export function formatNumber(number: number, decimals: number = 0): string {
   }).format(number);
 }
 
+export function formatDecimal(
+  number: number,
+  minDecimals: number = 2,
+  maxDecimals: number = 8
+): string {
+  const maximumFractionDigits = Math.max(minDecimals, maxDecimals);
+
+  return new Intl.NumberFormat('es-MX', {
+    minimumFractionDigits: minDecimals,
+    maximumFractionDigits
+  }).format(number);
+}
+
 // Función para calcular totales con máxima precisión decimal
 export function calcularTotal(cantidad: string | number, precio: string | number): number {
   // Convertir a números manteniendo la precisión

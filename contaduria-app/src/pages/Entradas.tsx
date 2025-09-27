@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { proveedoresRepo, type ProveedorFS } from '@/lib/repositories/proveedoresRepo';
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
 import { entradasRepo, type EntradaFS } from '@/lib/repositories/entradasRepo';
-import { formatCurrency, formatDateShort, createLocalDate, formatNumber, calcularTotal, formatCurrencyPrecise } from '@/lib/utils';
+import { formatCurrency, formatDateShort, createLocalDate, formatDecimal, calcularTotal, formatCurrencyPrecise } from '@/lib/utils';
 
 interface EntradaPorDiaFS {
   fecha: string;
@@ -419,8 +419,8 @@ export function Entradas() {
                   </label>
                   <input
                     type="number"
-                    step="0.01"
-                    min="0.01"
+                    step="any"
+                    min="0.000001"
                     required
                     value={formulario.cantidad}
                     onChange={(e) => setFormulario({ ...formulario, cantidad: e.target.value })}
@@ -516,7 +516,7 @@ export function Entradas() {
                         <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <div className="text-sm text-gray-500">Cantidad Total</div>
-                          <div className="text-lg font-bold text-green-600">{formatNumber(dia.totalEntradas, 2)}</div>
+                          <div className="text-lg font-bold text-green-600">{formatDecimal(dia.totalEntradas)}</div>
                         </div>
                           <Button
                             size="sm"
@@ -569,7 +569,7 @@ export function Entradas() {
                                     </div>
                                   </td>
                                   <td className="py-2 px-3 text-sm">{obtenerNombreProveedor(entrada.proveedorId)}</td>
-                                  <td className="py-2 px-3 text-sm font-medium">{formatNumber(entrada.cantidad, 2)}</td>
+                                  <td className="py-2 px-3 text-sm font-medium">{formatDecimal(entrada.cantidad)}</td>
                                   <td className="py-2 px-3 text-sm">{formatCurrency(entrada.precio)}</td>
                                   <td className="py-2 px-3 text-sm font-semibold text-green-600">
                                     {formatCurrency(entrada.total)}

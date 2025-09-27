@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
-import { formatCurrency, formatDateShort, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatDateShort, formatDecimal } from '@/lib/utils';
 import { useAppStore } from '@/stores/useAppStore';
 import { PDFReporteExistencias } from '@/components/PDFReporteExistencias';
 import { useAuth } from '@/contexts/AuthContext';
@@ -265,7 +265,7 @@ export function Existencias() {
               <Package className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Existencias</p>
-                <p className="text-2xl font-bold text-blue-600">{formatNumber(totalExistenciaGeneral, 2)}</p>
+                <p className="text-2xl font-bold text-blue-600">{formatDecimal(totalExistenciaGeneral)}</p>
               </div>
             </div>
           </CardContent>
@@ -330,13 +330,13 @@ export function Existencias() {
                         <CardTitle className="text-xl">{tipo.tipoNombre}</CardTitle>
                         <CardDescription>
                         {tipo.productos.length} producto{tipo.productos.length !== 1 ? 's' : ''} • 
-                        {formatNumber(tipo.totalExistencia, 2)} Kg • {formatCurrency(tipo.valorTotal)}
+                        {formatDecimal(tipo.totalExistencia)} Kg • {formatCurrency(tipo.valorTotal)}
                         </CardDescription>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-500">Existencia Total</div>
-                      <div className="text-lg font-bold text-blue-600">{formatNumber(tipo.totalExistencia, 2)}</div>
+                      <div className="text-lg font-bold text-blue-600">{formatDecimal(tipo.totalExistencia)}</div>
                     </div>
                   </div>
                 </CardHeader>
@@ -370,7 +370,7 @@ export function Existencias() {
                                         <span className={`font-medium ${
                                           variacion.existencia < 10 ? 'text-red-600' : 'text-green-600'
                                         }`}>
-                                          {formatNumber(variacion.existencia, 2)} Kg
+                                          {formatDecimal(variacion.existencia)} Kg
                                         </span>
                                         <span className="text-sm font-medium text-amber-600">
                                           Valor: {formatCurrency(variacion.valor)}
@@ -409,7 +409,7 @@ export function Existencias() {
                                                 <span className="font-medium text-blue-600">#{loteIndex + 1}</span>
                                                 <span>Fecha: {formatDateShort((lote.fecha as any).toDate?.() ?? (lote.fecha as any))}</span>
                                                 <span><strong>{obtenerNombreProveedor(lote.proveedorId as any)}</strong></span>
-                                                <span>Disponible: <strong>{formatNumber(lote.cantidadDisponible, 2)}</strong></span>
+                                                <span>Disponible: <strong>{formatDecimal(lote.cantidadDisponible)}</strong></span>
                                                 <span>Precio: <strong>{formatCurrency(lote.precioUnitario)}</strong></span>
                                                 {lote.numeroFactura && (
                                                   <span className="text-gray-600">Factura: {lote.numeroFactura}</span>
@@ -444,7 +444,7 @@ export function Existencias() {
                                   <span className={`font-medium ${
                                     variacion.existencia < 10 ? 'text-red-600' : 'text-green-600'
                                   }`}>
-                                    {formatNumber(variacion.existencia, 2)} Kg
+                                    {formatDecimal(variacion.existencia)} Kg
                                   </span>
                                   <span className="text-sm font-medium text-amber-600">
                                     Valor: {formatCurrency(variacion.valor)}
@@ -481,7 +481,7 @@ export function Existencias() {
                                           <span className="font-medium text-blue-600">#{loteIndex + 1}</span>
                                           <span>Fecha: {formatDateShort((lote.fecha as any).toDate?.() ?? (lote.fecha as any))}</span>
                                           <span><strong>{obtenerNombreProveedor(lote.proveedorId as any)}</strong></span>
-                                          <span>Disponible: <strong>{formatNumber(lote.cantidadDisponible, 2)}</strong></span>
+                                          <span>Disponible: <strong>{formatDecimal(lote.cantidadDisponible)}</strong></span>
                                           <span>Precio: <strong>{formatCurrency(lote.precioUnitario)}</strong></span>
                                           {lote.numeroFactura && (
                                             <span className="text-gray-600">Factura: {lote.numeroFactura}</span>

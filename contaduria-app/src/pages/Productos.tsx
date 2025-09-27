@@ -5,7 +5,7 @@ import { Plus, Package, Edit, Trash2, Settings } from 'lucide-react';
 import { productosRepo, type ProductoFS } from '@/lib/repositories/productosRepo';
 import { lotesRepo, type LoteFS } from '@/lib/repositories/lotesRepo';
 import { proveedoresRepo } from '@/lib/repositories/proveedoresRepo';
-import { formatCurrency, formatDateShort, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatDateShort, formatDecimal } from '@/lib/utils';
 import { TiposProductosModal } from '@/components/TiposProductosModal';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -391,7 +391,7 @@ export function Productos() {
                           <span className={`font-medium ${
                             producto.existenciaActual < 10 ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            {formatNumber(producto.existenciaActual, 2)}
+                            {formatDecimal(producto.existenciaActual)}
                           </span>
                         </td>
                         <td className="py-3 px-4">
@@ -450,7 +450,7 @@ export function Productos() {
                                       <div className="flex items-center gap-4">
                                         <span className="font-medium text-blue-600">#{index + 1}</span>
                                         <span>Fecha: {formatDateShort((lote.fecha as any).toDate?.() ?? (lote.fecha as any))}</span>
-                                        <span>Disponible: <strong>{formatNumber(lote.cantidadDisponible, 2)}</strong></span>
+                                        <span>Disponible: <strong>{formatDecimal(lote.cantidadDisponible)}</strong></span>
                                         <span>Precio: <strong>{formatCurrency(lote.precioUnitario)}</strong></span>
                                         {lote.numeroFactura && (
                                           <span className="text-gray-600">Factura: {lote.numeroFactura}</span>

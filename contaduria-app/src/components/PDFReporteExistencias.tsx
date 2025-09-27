@@ -16,9 +16,15 @@ const formatCurrencyPDF = (amount: number): string => {
 };
 
 // Función auxiliar para formatear números (simplificada para PDF)
-const formatNumberPDF = (number: number, decimals: number = 2): string => {
-  if (!number || isNaN(number)) return '0.00';
-  return number.toFixed(decimals).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+const formatNumberPDF = (number: number, decimals: number = 2, maxDecimals: number = 8): string => {
+  const maximumFractionDigits = Math.max(decimals, maxDecimals);
+
+  const value = !number || isNaN(number) ? 0 : number;
+
+  return value.toLocaleString('es-MX', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits
+  });
 };
 
 // Ajusta los tamaños de letra según la cantidad de filas que se mostrarán
