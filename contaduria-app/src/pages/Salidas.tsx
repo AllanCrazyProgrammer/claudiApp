@@ -121,7 +121,36 @@ export function Salidas() {
     
     try {
       if (salidaEditando) {
-        alert('La edición de salidas no está habilitada en Firestore aún. Elimina y vuelve a crear.');
+        // Actualizar salida existente
+        if (!user) return;
+        
+        const lote = lotesDisponibles.find(l => l.id === formulario.loteId);
+        if (!lote) {
+          alert('El lote seleccionado no es válido');
+          return;
+        }
+        
+        // Verificar stock disponible (considerando que la salida original liberará su cantidad)
+        const cantidadOriginal = salidaEditando.cantidad;
+        const stockDisponibleConOriginal = lote.cantidadDisponible + cantidadOriginal;
+        
+        if (cantidad > stockDisponibleConOriginal) {
+          alert(`Stock insuficiente. Disponible (incluyendo cantidad original): ${stockDisponibleConOriginal} unidades`);
+          return;
+        }
+        
+        await salidasRepo.actualizarSalida(salidaEditando.id, {
+          loteId: formulario.loteId,
+          fecha: createLocalDate(formulario.fecha) as any,
+          cantidad,
+          precio: lote.precioUnitario,
+          numeroFactura: formulario.numeroFactura || undefined,
+          total: cantidad * lote.precioUnitario
+        });
+        
+        alert('Salida actualizada exitosamente');
+        cancelarEdicion();
+        cargarDatos();
         return;
       }
         
@@ -187,16 +216,48 @@ export function Salidas() {
     }));
   };
 
-  const editarSalida = (salida: SalidaFS & { id: string }) => {
+  const editarSalida = async (salida: SalidaFS & { id: string }) => {
     setSalidaEditando(salida);
     const fechaSalida = (salida.fecha as any).toDate ? (salida.fecha as any).toDate() : new Date(salida.fecha as any);
+    
+    // Buscar el lote para obtener el proveedorId
+    let proveedorId = '';
+    let lotesDelProveedor: (LoteFS & { id: string })[] = [];
+    
+    if (salida.loteId) {
+      try {
+        // Buscar el lote específico para obtener su proveedorId
+        const todosLosLotes = await Promise.all(
+          proveedores.map(async (proveedor) => {
+            const lotes = await lotesRepo.obtenerLotesConExistenciaPorProveedor(proveedor.id);
+            return lotes.map(lote => ({ ...lote, proveedorId: proveedor.id }));
+          })
+        );
+        
+        const loteEncontrado = todosLosLotes.flat().find(lote => lote.id === salida.loteId);
+        if (loteEncontrado) {
+          proveedorId = loteEncontrado.proveedorId;
+          // Cargar todos los lotes de este proveedor
+          lotesDelProveedor = await lotesRepo.obtenerLotesConExistenciaPorProveedor(proveedorId) as any;
+        }
+      } catch (error) {
+        console.error('Error al cargar información del lote:', error);
+      }
+    }
+    
     setFormulario({
       loteId: salida.loteId?.toString() || '',
-      proveedorId: '', // Se determinará por el lote
+      proveedorId,
       fecha: fechaSalida.toISOString().split('T')[0],
       cantidad: salida.cantidad.toString(),
       numeroFactura: salida.numeroFactura || ''
     });
+    
+    // Establecer los lotes disponibles si se encontró el proveedor
+    if (lotesDelProveedor.length > 0) {
+      setLotesDisponibles(lotesDelProveedor);
+    }
+    
     setMostrarFormulario(true);
   };
 
@@ -330,7 +391,7 @@ export function Salidas() {
                     <p><strong>Total Original:</strong> {formatCurrency(salidaEditando.total)}</p>
                     {salidaEditando.loteId && (
                       <p className="text-xs mt-1 text-blue-600">
-                        * Solo se pueden editar la fecha, cantidad y número de factura
+                        * Puedes cambiar el proveedor, lote, fecha, cantidad y número de factura
                       </p>
                     )}
                   </div>
@@ -340,14 +401,13 @@ export function Salidas() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Proveedor * {salidaEditando && <span className="text-xs text-gray-500">(No editable)</span>}
+                    Proveedor *
                   </label>
                   <select
                     required
                     value={formulario.proveedorId}
                     onChange={(e) => handleProveedorChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={!!salidaEditando}
                   >
                     <option value="">Seleccionar proveedor...</option>
                     {proveedores.map((proveedor) => (
@@ -360,15 +420,15 @@ export function Salidas() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Lote de Producto * {salidaEditando && <span className="text-xs text-gray-500">(No editable)</span>}
-                    {!salidaEditando && <span className="text-xs text-gray-500">(ordenado por FIFO - más antiguo primero)</span>}
+                    Lote de Producto *
+                    <span className="text-xs text-gray-500">(ordenado por FIFO - más antiguo primero)</span>
                   </label>
                   <select
                     required
                     value={formulario.loteId}
                     onChange={(e) => handleLoteChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={!formulario.proveedorId || !!salidaEditando}
+                    disabled={!formulario.proveedorId}
                   >
                     <option value="">
                       {!formulario.proveedorId 

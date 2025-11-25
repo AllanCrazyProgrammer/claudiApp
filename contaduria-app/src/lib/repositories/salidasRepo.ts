@@ -277,6 +277,118 @@ export const salidasRepo = {
       return true;
     });
   },
+
+  async actualizarSalida(salidaId: string, nuevosdatos: Partial<Omit<SalidaFS, 'id' | 'fechaCreacion' | 'ownerUid'>>) {
+    // Primero obtenemos la salida original
+    const salidaRef = doc(firestore, SALIDAS, salidaId);
+    const salidaDoc = await getDoc(salidaRef);
+    if (!salidaDoc.exists()) throw new Error('Salida no encontrada');
+    const salidaOriginal = salidaDoc.data() as any;
+
+    // Obtener todos los lotes del producto fuera de la transacción
+    const lotesQ = query(
+      collection(firestore, LOTES),
+      where('productoId', '==', salidaOriginal.productoId)
+    );
+    const lotesSnapshot = await getDocs(lotesQ);
+    const lotesTotales = lotesSnapshot.docs.map(d => ({ 
+      id: d.id, 
+      ...d.data() 
+    }));
+
+    return await runTransaction(firestore, async (tx) => {
+      // PASO 1: Verificar que la salida y los lotes existen
+      const salidaSnapTx = await tx.get(salidaRef);
+      if (!salidaSnapTx.exists()) throw new Error('Salida no encontrada');
+      
+      const loteOriginalRef = doc(firestore, LOTES, salidaOriginal.loteId);
+      const loteOriginalSnap = await tx.get(loteOriginalRef);
+      if (!loteOriginalSnap.exists()) throw new Error('Lote original no encontrado');
+      const loteOriginal = loteOriginalSnap.data() as any;
+
+      // Si cambió el lote, verificar el nuevo lote
+      let loteNuevo = loteOriginal;
+      if (nuevosdatos.loteId && nuevosdatos.loteId !== salidaOriginal.loteId) {
+        const loteNuevoRef = doc(firestore, LOTES, nuevosdatos.loteId);
+        const loteNuevoSnap = await tx.get(loteNuevoRef);
+        if (!loteNuevoSnap.exists()) throw new Error('Nuevo lote no encontrado');
+        loteNuevo = loteNuevoSnap.data() as any;
+      }
+
+      // PASO 2: Calcular cambios
+      const cantidadOriginal = salidaOriginal.cantidad;
+      const cantidadNueva = nuevosdatos.cantidad ?? cantidadOriginal;
+      const loteIdOriginal = salidaOriginal.loteId;
+      const loteIdNuevo = nuevosdatos.loteId ?? loteIdOriginal;
+
+      // Simular los cambios en los lotes
+      const lotesSimulados = lotesTotales.map((l: any) => {
+        let nuevaCantidad = l.cantidadDisponible;
+        
+        // Si es el lote original, restaurar la cantidad original
+        if (l.id === loteIdOriginal) {
+          nuevaCantidad += cantidadOriginal;
+        }
+        
+        // Si es el lote nuevo (puede ser el mismo), descontar la nueva cantidad
+        if (l.id === loteIdNuevo) {
+          nuevaCantidad -= cantidadNueva;
+        }
+        
+        return { ...l, cantidadDisponible: nuevaCantidad };
+      });
+
+      // Verificar que hay stock suficiente en el lote nuevo
+      const loteSimuladoNuevo = lotesSimulados.find(l => l.id === loteIdNuevo);
+      if (!loteSimuladoNuevo || loteSimuladoNuevo.cantidadDisponible < 0) {
+        throw new Error('Stock insuficiente en el lote seleccionado');
+      }
+
+      const existenciaTotal = lotesSimulados.reduce((t: number, l: any) => t + Number(l.cantidadDisponible || 0), 0);
+      const valorTotal = lotesSimulados.reduce((t: number, l: any) => t + Number(l.cantidadDisponible || 0) * Number(l.precioUnitario || 0), 0);
+      const nuevoPrecioPromedio = existenciaTotal > 0 ? valorTotal / existenciaTotal : 0;
+
+      // PASO 3: Aplicar cambios
+      // Actualizar lote original (restaurar cantidad)
+      if (loteIdOriginal === loteIdNuevo) {
+        // Mismo lote: ajustar directamente
+        const diferencia = cantidadOriginal - cantidadNueva;
+        tx.update(loteOriginalRef, { 
+          cantidadDisponible: loteOriginal.cantidadDisponible + diferencia 
+        });
+      } else {
+        // Lotes diferentes: restaurar original y descontar del nuevo
+        tx.update(loteOriginalRef, { 
+          cantidadDisponible: loteOriginal.cantidadDisponible + cantidadOriginal 
+        });
+        tx.update(doc(firestore, LOTES, loteIdNuevo), { 
+          cantidadDisponible: loteNuevo.cantidadDisponible - cantidadNueva 
+        });
+      }
+
+      // Actualizar salida
+      const datosActualizados = {
+        ...nuevosdatos,
+        fecha: nuevosdatos.fecha ? Timestamp.fromDate(nuevosdatos.fecha) : undefined
+      };
+      // Remover campos undefined
+      Object.keys(datosActualizados).forEach(key => {
+        if (datosActualizados[key] === undefined) {
+          delete datosActualizados[key];
+        }
+      });
+      
+      tx.update(salidaRef, datosActualizados);
+
+      // Actualizar producto
+      tx.update(doc(firestore, PRODUCTOS, salidaOriginal.productoId), {
+        existenciaActual: existenciaTotal,
+        precioPromedio: nuevoPrecioPromedio,
+      });
+
+      return true;
+    });
+  },
 }
 
 
