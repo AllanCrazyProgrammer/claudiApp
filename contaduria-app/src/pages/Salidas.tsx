@@ -443,7 +443,7 @@ export function Salidas() {
                       const fechaLote = (lote.fecha as any).toDate ? (lote.fecha as any).toDate() : new Date(lote.fecha as any);
                       return (
                         <option key={lote.id} value={lote.id}>
-                          #{index + 1} - {producto?.nombre} | {formatDateShort(fechaLote)} | Stock: {lote.cantidadDisponible} | {formatCurrency(lote.precioUnitario)}
+                          #{index + 1} - {producto?.nombre} | {formatDateShort(fechaLote)} | Stock: {formatDecimal(lote.cantidadDisponible)} | {formatCurrency(lote.precioUnitario)}
                         </option>
                       );
                     })}

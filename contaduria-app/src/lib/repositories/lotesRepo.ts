@@ -40,7 +40,11 @@ export const lotesRepo = {
     const snap = await getDocs(q);
     const lotes = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as LoteFS[];
     return lotes
-      .filter(l => (l.cantidadDisponible as any) > 0)
+      .filter(l => {
+        const cantidad = Number(l.cantidadDisponible) || 0;
+        // Filtrar lotes que al formatearse a 2 decimales sean mayor a 0.00
+        return Math.round(cantidad * 100) / 100 > 0;
+      })
       .sort((a, b) => (a.fecha as any).toMillis?.() - (b.fecha as any).toMillis?.());
   },
 
@@ -53,7 +57,11 @@ export const lotesRepo = {
     const snap = await getDocs(q);
     const lotes = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as LoteFS[];
     return lotes
-      .filter(l => (l.cantidadDisponible as any) > 0)
+      .filter(l => {
+        const cantidad = Number(l.cantidadDisponible) || 0;
+        // Filtrar lotes que al formatearse a 2 decimales sean mayor a 0.00
+        return Math.round(cantidad * 100) / 100 > 0;
+      })
       .sort((a, b) => (a.fecha as any).toMillis?.() - (b.fecha as any).toMillis?.());
   },
 }
